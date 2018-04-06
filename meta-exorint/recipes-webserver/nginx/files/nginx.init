@@ -1,0 +1,73 @@
+#! /bin/sh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/sbin/nginx
+NAME=nginx
+DESC=nginx
+PID=/var/run/nginx/nginx.pid
+STORAGE=/mnt/data/.$NAME
+
+test -x $DAEMON || exit 0
+
+# Include nginx defaults if available
+if [ -f /etc/default/nginx ] ; then
+        . /etc/default/nginx
+fi
+
+set -e
+
+create_volatile()
+{
+    mkdir -p "/run/nginx";
+    chown www:www-data /run/nginx || echo "Failed to set owner -www- for -/run/nginx-." >/dev/tty0 2>&1;
+    chmod 0755 /run/nginx || echo "Failed to set mode -0755- for -/run/nginx-." >/dev/tty0 2>&1
+
+    mkdir -p "/var/log/nginx";
+    chown root.root /var/log/nginx || echo "Failed to set owner -root- for -/var/log/nginx-." >/dev/tty0 2>&1;
+    chmod 0755 /var/log/nginx || echo "Failed to set mode -0755- for -/var/log/nginx-." >/dev/tty0 2>&1
+}
+
+mkstorage()
+{
+    rm -rf $STORAGE
+    mkdir -p $STORAGE
+    chown www:www-data $STORAGE
+}
+
+case "$1" in
+  start)
+        echo -n "Starting $DESC: "
+        create_volatile
+        mkstorage
+        start-stop-daemon --start --quiet --pidfile $PID \
+                --name $NAME --exec $DAEMON -- $DAEMON_OPTS
+        echo "$NAME."
+        ;;
+  stop)
+        echo -n "Stopping $DESC: "
+        start-stop-daemon -K --quiet --pidfile $PID \
+                --name $NAME
+        echo "$NAME."
+        ;;
+  restart|force-reload)
+        echo -n "Restarting $DESC: "
+        start-stop-daemon -K --quiet --pidfile $PID \
+                --name $NAME
+        sleep 1
+        start-stop-daemon --start --quiet --pidfile $PID \
+                --name $NAME --exec $DAEMON -- $DAEMON_OPTS
+        echo "$NAME."
+        ;;
+  reload)
+      echo -n "Reloading $DESC configuration: "
+      start-stop-daemon --stop --signal HUP --quiet --pidfile $PID \
+          --exec $DAEMON
+      echo "$NAME."
+      ;;
+  *)
+        N=/etc/init.d/$NAME
+        echo "Usage: $N {start|stop|restart|force-reload}" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

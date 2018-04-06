@@ -1,0 +1,29 @@
+--- metacity-2.34.13-orig/src/core/constraints.c	2012-10-15 19:53:21.000000000 +0200
++++ metacity-2.34.13/src/core/constraints.c	2015-01-26 19:03:22.499597855 +0100
+@@ -1209,6 +1209,8 @@
+                           ConstraintPriority  priority,
+                           gboolean            check_only)
+ {
++  return TRUE; /* disable this constraint */
++
+   if (priority > PRIORITY_ENTIRELY_VISIBLE_ON_WORKAREA)
+     return TRUE;
+ 
+@@ -1236,6 +1238,8 @@
+                             ConstraintPriority  priority,
+                             gboolean            check_only)
+ {
++  return TRUE; /* disable this constraint */
++
+   gboolean unconstrained_user_action;
+   gboolean retval;
+   int bottom_amount;
+@@ -1321,6 +1325,8 @@
+                               ConstraintPriority  priority,
+                               gboolean            check_only)
+ {
++  return TRUE; /* disable this constraint */
++
+   gboolean retval;
+   int top_amount, bottom_amount;
+   int horiz_amount_offscreen, vert_amount_offscreen;

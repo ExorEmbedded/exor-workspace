@@ -1,0 +1,11 @@
+--- ifplugd-0.28.orig/conf/ifplugd.conf
++++ ifplugd-0.28/conf/ifplugd.conf
+@@ -34,7 +34,7 @@
+ 
+ # Additional parameters for ifplugd.
+ # (Run "ifplugd -h" for further information.)
+-ARGS="-fwI -u0 -d10"
++ARGS="-fwI -u0 -d3"
+ 
+ # Additional parameters for ifplugd for the specified interface.  Note
+ # that $ARGS is ignored, when a variable like this is set for an

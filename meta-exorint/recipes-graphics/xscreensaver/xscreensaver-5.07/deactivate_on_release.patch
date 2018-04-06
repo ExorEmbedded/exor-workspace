@@ -1,0 +1,16 @@
+--- xscreensaver-5.07/driver/timers.c	2008-07-03 04:44:07.000000000 +0200
++++ tmp/driver/timers.c	2016-03-14 10:24:58.270382911 +0100
+@@ -910,11 +910,8 @@
+ 	 */
+ 	if (!until_idle_p)
+ 	  {
+-	    if (si->demoing_p &&
+-		(event.xany.type == MotionNotify ||
+-		 event.xany.type == KeyRelease))
+-	      /* When we're demoing a single hack, mouse motion doesn't
+-		 cause deactivation.  Only clicks and keypresses do. */
++	    // Only release events must cause deactivation
++	    if (event.xany.type == MotionNotify || event.xany.type == KeyPress || event.xany.type == ButtonPress )
+ 	      ;
+ 	    else
+ 	      /* If we're not demoing, then any activity causes deactivation.

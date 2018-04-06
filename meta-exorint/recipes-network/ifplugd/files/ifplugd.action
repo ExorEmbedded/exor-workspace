@@ -1,0 +1,92 @@
+#!/bin/bash
+
+# $Id: ifplugd.action 99 2004-02-08 20:17:59Z lennart $
+
+# This file is part of ifplugd.
+#
+# ifplugd is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# ifplugd is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with ifplugd; if not, write to the Free Software Foundation,
+# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+
+if [ -z "$1" ] || [ -z "$2" ] ; then
+    echo "Wrong arguments" > /dev/stderr
+    exit 1
+fi
+
+BSPVERSION="$(cat /boot/version | cut -c1-4)"
+
+set_eth_params_ethtool() {
+
+    local iface=$1
+    local cmd=$2
+    local param=$3
+    local speed
+
+    ifconfig $iface up
+
+    case ${cmd} in
+        # optimization: avoid pulling down interface unnecessarily by checking speed
+        # From 'man ethtool':
+        #     0x001       10baseT Half
+        #     0x002       10baseT Full
+        #     0x004       100baseT Half
+        #     0x008       100baseT Full
+        #     0x010       1000baseT Half       (not supported by IEEE standards)
+        #     0x020       1000baseT Full
+        advertise)
+            speed=$(cat /sys/class/net/$iface/speed)
+            if ( [ ${speed} -eq 10 ]    && [ $(( ${param} & 0x03 )) -ne 0 ] ) ||
+               ( [ ${speed} -eq 100 ]   && [ $(( ${param} & 0x0C )) -ne 0 ] ) ||
+               ( [ ${speed} -eq 1000 ]  && [ $(( ${param} & 0x30 )) -ne 0 ] ); then
+                echo "speed: ${speed}, advertise: ${param} - ignoring"
+            else
+                echo "speed: ${speed}, advertise: ${param} - setting"
+                ethtool -s $iface advertise ${param}
+            fi
+            ;;
+        *)
+            echo "running ethtool -s $@"
+            ethtool -s $@
+            ;;
+    esac
+}
+
+set_eth_params() {
+    local iface=$1
+    if [ -e /etc/network.persist/$iface.ethtool ]; then
+        set_eth_params_ethtool $iface $(cat /etc/network.persist/$iface.ethtool)
+    fi
+}
+
+set_eth_renegotiate() {
+    local iface=$1
+    if [ -e /etc/network.persist/$iface.renegotiate ]; then
+        ethtool --negotiate $iface
+    fi
+}
+
+case "$2" in
+    up)
+        set_eth_params $1
+        set_eth_renegotiate $1
+        # don't pull up if interface is bridged
+        [ -e /sys/class/net/$1/brport ] && exit 0
+
+        exec /sbin/ifup $1
+        ;;
+    down)
+        exec /sbin/ifdown -f $1
+        ;; 
+esac
+
+exit 0

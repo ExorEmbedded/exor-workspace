@@ -1,0 +1,3 @@
+#!/bin/sh
+
+dbus-send --print-reply --system --dest=com.exor.EPAD "/NetworkManager" com.exor.EPAD.NetworkManager.interfaceStateNotification string:"${dev}" int32:1

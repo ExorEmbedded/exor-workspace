@@ -1,0 +1,37 @@
+--- git.orig/scripts/xinput_calibrator_pointercal.sh
++++ git/scripts/xinput_calibrator_pointercal.sh
+@@ -11,21 +11,28 @@
+ PATH="/usr/bin:$PATH"
+ 
+ BINARY="xinput_calibrator"
+-CALFILE="/etc/pointercal.xinput"
++CALLINK="/etc/pointercal.xinput"
++FACTORYMNT="/mnt/factory"
++CALDIR="$FACTORYMNT/etc"
++CALFILE="$CALDIR/pointercal.xinput"
+ LOGFILE="/var/log/xinput_calibrator.pointercal.log"
+ 
+-if [ -e $CALFILE ] ; then
+-  if grep replace $CALFILE ; then
++if [ -e $CALLINK ] ; then
++  if grep replace $CALLINK ; then
+     echo "Empty calibration file found, removing it"
+-    rm $CALFILE
++    rm $CALLINK
+   else
+-    echo "Using calibration data stored in $CALFILE"
+-    . $CALFILE && exit 0
++    echo "Using calibration data stored in $CALLINK"
++    . $CALLINK && exit 0
+   fi
+ fi
+ 
+ CALDATA=`$BINARY --output-type xinput -v | tee $LOGFILE | grep '    xinput set' | sed 's/^    //g; s/$/;/g'`
+ if [ ! -z "$CALDATA" ] ; then
++  mount -o remount,rw $FACTORYMNT
++  mkdir -p $CALDIR
+   echo $CALDATA > $CALFILE
++  mount -o remount,ro $FACTORYMNT
++  ln -sf $CALFILE $CALLINK
+   echo "Calibration data stored in $CALFILE (log in $LOGFILE)"
+ fi

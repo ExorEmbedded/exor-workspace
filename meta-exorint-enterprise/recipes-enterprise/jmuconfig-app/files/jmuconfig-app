@@ -1,0 +1,9 @@
+#!/bin/sh
+
+JMUCONFIG_MAINURL="http://localhost:8080"
+BROWSER_FLAGS="-f -l -g -x api/v1/authentication/logout -k /var/run/jmuconfig-app -y -w -X -u admin -p admin -ck -r -20"
+
+# Make sure HOME is set for proper QSettings path (used for Cookie Jar)
+export HOME=/home/root
+
+exec WebkitBrowser $JMUCONFIG_MAINURL $BROWSER_FLAGS

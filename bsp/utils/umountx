@@ -1,0 +1,22 @@
+#!/bin/bash -x
+#
+# Unmount flash partitions
+
+PROG="utils/$(basename $0)"
+[ -e "${PWD}/${PROG}" ] || die "${PROG} must be run from bsp directory!"
+
+[ -z ${MNTBOOT}} ] && MNTBOOT="/media/boot"
+#[ -z ${MNTROOT}} ] && MNTROOT="/media/root"
+
+OVERRIDE="${PWD}/bsptool.local"
+[ -e "${OVERRIDE}" ] && source "${OVERRIDE}"
+
+sync
+sudo umount "${MNTBOOT}"
+sudo rmdir "${MNTBOOT}" 2>/dev/null
+
+#sync
+#sudo umount "${MNTROOT}"
+#sudo rmdir "${MNTROOT}" 2>/dev/null
+
+exit 0

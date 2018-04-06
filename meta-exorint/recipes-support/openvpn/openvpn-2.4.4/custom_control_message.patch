@@ -1,0 +1,310 @@
+diff --git a/src/openvpn/forward.c b/src/openvpn/forward.c
+index 8102e94..788bf3b 100644
+--- a/src/openvpn/forward.c
++++ b/src/openvpn/forward.c
+@@ -136,6 +136,28 @@ check_tls_errors_nco(struct context *c)
+ 
+ #if P2MP
+ 
++void
++process_custom_control_message(struct context *c, const struct buffer *buf, int adv)
++{
++    struct argv argv = argv_new ();
++    char *pch = BSTR(buf) + adv;
++    argv_parse_cmd(&argv,
++           c->options.custom_script);
++    /* split buf into args */
++    if (*pch == ' ')
++        pch++;
++    if (strlen(pch) > 0) {
++        char *saveptr;
++        pch = strtok_r (pch, " ", &saveptr);
++        while (pch != NULL) {
++            argv_printf_cat(&argv, "%s", pch);
++            pch = strtok_r (NULL, " ", &saveptr);
++        }
++    }
++    openvpn_run_script (&argv, c->c2.es, 0, "--custom");
++    argv_reset (&argv);
++}
++
+ /*
+  * Handle incoming configuration
+  * messages on the control channel.
+@@ -172,6 +194,10 @@ check_incoming_control_channel_dowork(struct context *c)
+             {
+                 server_pushed_signal(c, &buf, false, 4);
+             }
++            else if (buf_string_match_head_str (&buf, "CUSTOM"))
++            {
++                process_custom_control_message(c, &buf, 6);
++            }
+             else
+             {
+                 msg(D_PUSH_ERRORS, "WARNING: Received unknown control message: %s", BSTR(&buf));
+diff --git a/src/openvpn/manage.c b/src/openvpn/manage.c
+index 58b65c2..81a6503 100644
+--- a/src/openvpn/manage.c
++++ b/src/openvpn/manage.c
+@@ -96,6 +96,8 @@ man_help()
+     msg(M_CLIENT, "remote type [host port] : Override remote directive, type=ACCEPT|MOD|SKIP.");
+     msg(M_CLIENT, "proxy type [host port flags] : Enter dynamic proxy server info.");
+     msg(M_CLIENT, "pid                    : Show process ID of the current OpenVPN process.");
++    msg(M_CLIENT, "control cn CMD         : Send a control message to the client instance(s) having common name cn.");
++    msg(M_CLIENT, "control IP:port CMD    : Send a control message to the client instance connecting from IP:port.");
+ #ifdef ENABLE_PKCS11
+     msg(M_CLIENT, "pkcs11-id-count        : Get number of available PKCS#11 identities.");
+     msg(M_CLIENT, "pkcs11-id-get index    : Get PKCS#11 identity at index.");
+@@ -577,6 +579,101 @@ man_kill(struct management *man, const char *victim)
+     gc_free(&gc);
+ }
+ 
++
++static void
++man_control (struct management *man, const char *victim, const char *cmd, const char **params, int nparms)
++{
++  struct gc_arena gc = gc_new ();
++  int i = 0;
++  int msg_length = 0;
++  struct buffer msg;
++
++  /* concatenate the cmd and the params */
++  msg_length = strlen(cmd) + 1;
++  for (i = 0; i<nparms; i++) 
++    {
++      msg_length += strlen(params[i]) + 1;
++    }
++  msg = alloc_buf_gc (msg_length, &gc);
++  buf_printf (&msg, "%s", cmd);
++  for (i = 0; i<nparms; i++) 
++    {
++      buf_printf (&msg, " %s", params[i]);
++    }
++
++  if (man->persist.callback.kill_by_cn && man->persist.callback.kill_by_addr)
++    {
++      struct buffer buf;
++      char p1[128];
++      char p2[128];
++      int n_notified;
++
++      buf_set_read (&buf, (uint8_t*) victim, strlen (victim) + 1);
++      buf_parse (&buf, ':', p1, sizeof (p1));
++      buf_parse (&buf, ':', p2, sizeof (p2));
++
++      if (strlen (p1) && strlen (p2))
++	{
++	  /* IP:port specified */
++	  bool status;
++	  const in_addr_t addr = getaddr (GETADDR_HOST_ORDER|GETADDR_MSG_VIRT_OUT, p1, 0, &status, NULL);
++	  if (status)
++	    {
++	      const int port = atoi (p2);
++	      if (port > 0 && port < 65536)
++		{
++		  n_notified = (*man->persist.callback.control_by_addr) (man->persist.callback.arg, addr, port, BSTR(&msg));
++		  if (n_notified > 0)
++		    {
++		      msg (M_CLIENT, "SUCCESS: %d client(s) at address %s:%d received the control message",
++			   n_notified,
++			   print_in_addr_t (addr, 0, &gc),
++			   port);
++		    }
++		  else
++		    {
++		      msg (M_CLIENT, "ERROR: client at address %s:%d not found",
++			   print_in_addr_t (addr, 0, &gc),
++			   port);
++		    }
++		}
++	      else
++		{
++		  msg (M_CLIENT, "ERROR: port number is out of range: %s", p2);
++		}
++	    }
++	  else
++	    {
++	      msg (M_CLIENT, "ERROR: error parsing IP address: %s", p1);
++	    }
++	}
++      else if (strlen (p1))
++	{
++	  /* common name specified */
++	  n_notified = (*man->persist.callback.control_by_cn) (man->persist.callback.arg, p1, BSTR(&msg));
++	  if (n_notified > 0)
++	    {
++	      msg (M_CLIENT, "SUCCESS: common name '%s' found, %d client(s) received the control message", p1, n_notified);
++	    }
++	  else
++	    {
++	      msg (M_CLIENT, "ERROR: common name '%s' not found", p1);
++	    }
++	}
++      else
++	{
++	  msg (M_CLIENT, "ERROR: control parse");
++	}
++    }
++  else
++    {
++      msg (M_CLIENT, "ERROR: The 'control' command is not supported by the current daemon mode");
++    }
++
++  gc_free (&gc);
++}
++
++
+ /*
+  * General-purpose history command handler
+  * for the log and echo commands.
+@@ -1268,6 +1365,11 @@ man_dispatch_command(struct management *man, struct status_output *so, const cha
+     {
+         msg(M_CLIENT, "SUCCESS: pid=%d", platform_getpid());
+     }
++  else if (streq (p[0], "control"))
++    {
++      if (man_need (man, p, 2, MN_AT_LEAST))
++	man_control (man, p[1], p[2], p + 3, nparms - 3);
++    }
+ #ifdef MANAGEMENT_DEF_AUTH
+     else if (streq(p[0], "nclients"))
+     {
+diff --git a/src/openvpn/manage.h b/src/openvpn/manage.h
+index 6e5cb9b..b30ddac 100644
+--- a/src/openvpn/manage.h
++++ b/src/openvpn/manage.h
+@@ -165,6 +165,8 @@ struct management_callback
+     int (*kill_by_addr) (void *arg, const in_addr_t addr, const int port);
+     void (*delete_event) (void *arg, event_t event);
+     int (*n_clients) (void *arg);
++    int (*control_by_cn) (void *arg, const char *common_name, const char *msg);
++    int (*control_by_addr) (void *arg, const in_addr_t addr, const int port, const char *msg);
+ #ifdef MANAGEMENT_DEF_AUTH
+     bool (*kill_by_cid)(void *arg, const unsigned long cid, const char *kill_msg);
+     bool (*client_auth) (void *arg,
+diff --git a/src/openvpn/multi.c b/src/openvpn/multi.c
+index 56009b7..14db1bb 100644
+--- a/src/openvpn/multi.c
++++ b/src/openvpn/multi.c
+@@ -3028,6 +3028,65 @@ is_exit_restart(int sig)
+     return (sig == SIGUSR1 || sig == SIGTERM || sig == SIGHUP || sig == SIGINT);
+ }
+ 
++static int
++management_callback_control_by_cn (void *arg, const char *del_cn, const char *msg)
++{
++  struct multi_context *m = (struct multi_context *) arg;
++  struct hash_iterator hi;
++  struct hash_element *he;
++  int count = 0;
++
++  hash_iterator_init (m->iter, &hi);
++  while ((he = hash_iterator_next (&hi)))
++    {
++      struct multi_instance *mi = (struct multi_instance *) he->value;
++      if (!mi->halt)
++	{
++	  const char *cn = tls_common_name (mi->context.c2.tls_multi, false);
++	  if (cn && !strcmp (cn, del_cn))
++	    {
++          send_control_channel_string (&mi->context, msg, D_PUSH);
++          multi_schedule_context_wakeup(m, mi);
++	      ++count;
++	    }
++	}
++    }
++  hash_iterator_free (&hi);
++  return count;
++}
++
++static int
++management_callback_control_by_addr (void *arg, const in_addr_t addr, const int port, const char *msg)
++{
++  struct multi_context *m = (struct multi_context *) arg;
++  struct hash_iterator hi;
++  struct hash_element *he;
++  struct openvpn_sockaddr saddr;
++  struct mroute_addr maddr;
++  int count = 0;
++
++  CLEAR (saddr);
++  saddr.addr.in4.sin_family = AF_INET;
++  saddr.addr.in4.sin_addr.s_addr = htonl (addr);
++  saddr.addr.in4.sin_port = htons (port);
++  if (mroute_extract_openvpn_sockaddr (&maddr, &saddr, true))
++    {
++      hash_iterator_init (m->iter, &hi);
++      while ((he = hash_iterator_next (&hi)))
++	{
++	  struct multi_instance *mi = (struct multi_instance *) he->value;
++	  if (!mi->halt && mroute_addr_equal (&maddr, &mi->real))
++	    {
++          send_control_channel_string (&mi->context, msg, D_PUSH);
++          multi_schedule_context_wakeup(m, mi);
++	      ++count;
++	    }
++	}
++      hash_iterator_free (&hi);
++    }
++  return count;
++}
++
+ static void
+ multi_push_restart_schedule_exit(struct multi_context *m, bool next_server)
+ {
+@@ -3345,6 +3404,8 @@ init_management_callback_multi(struct multi_context *m)
+         cb.kill_by_addr = management_callback_kill_by_addr;
+         cb.delete_event = management_delete_event;
+         cb.n_clients = management_callback_n_clients;
++        cb.control_by_cn = management_callback_control_by_cn;
++        cb.control_by_addr = management_callback_control_by_addr;
+ #ifdef MANAGEMENT_DEF_AUTH
+         cb.kill_by_cid = management_kill_by_cid;
+         cb.client_auth = management_client_auth;
+diff --git a/src/openvpn/options.c b/src/openvpn/options.c
+index 9fef394..8e36595 100644
+--- a/src/openvpn/options.c
++++ b/src/openvpn/options.c
+@@ -309,6 +309,7 @@ static const char usage_message[] =
+     "--down-pre      : Run --down command before TUN/TAP close.\n"
+     "--up-restart    : Run up/down commands for all restarts including those\n"
+     "                  caused by --ping-restart or SIGUSR1\n"
++    "--custom cmd    : Run command cmd after receiving a custom command.\n"
+     "--user user     : Set UID to user after initialization.\n"
+     "--group group   : Set GID to group after initialization.\n"
+     "--chroot dir    : Chroot to this directory after initialization.\n"
+@@ -1622,6 +1623,7 @@ show_settings(const struct options *o)
+     SHOW_STR(writepid);
+     SHOW_STR(up_script);
+     SHOW_STR(down_script);
++    SHOW_STR (custom_script);
+     SHOW_BOOL(down_pre);
+     SHOW_BOOL(up_restart);
+     SHOW_BOOL(up_delay);
+@@ -5551,6 +5553,14 @@ add_option(struct options *options,
+         }
+         set_user_script(options, &options->down_script, p[1], "down", true);
+     }
++    else if (streq (p[0], "custom") && p[1])
++    {
++        VERIFY_PERMISSION (OPT_P_SCRIPT);
++        if (!no_more_than_n_args (msglevel, p, 2, NM_QUOTE_HINT)) {
++	        goto err;
++        }
++        set_user_script (options, &options->custom_script, p[1], "custom", true);
++    }
+     else if (streq(p[0], "down-pre") && !p[1])
+     {
+         VERIFY_PERMISSION(OPT_P_GENERAL);
+diff --git a/src/openvpn/options.h b/src/openvpn/options.h
+index b3ab029..5ae46e7 100644
+--- a/src/openvpn/options.h
++++ b/src/openvpn/options.h
+@@ -283,6 +283,7 @@ struct options
+     const char *writepid;
+     const char *up_script;
+     const char *down_script;
++    const char *custom_script;
+     bool user_script_used;
+     bool down_pre;
+     bool up_delay;

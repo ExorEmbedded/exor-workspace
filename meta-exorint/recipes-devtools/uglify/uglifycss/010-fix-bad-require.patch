@@ -1,0 +1,11 @@
+--- git.orig/uglifycss
++++ git/uglifycss
+@@ -26,7 +26,7 @@
+  * by Yahoo! Inc. under the BSD (revised) open source license.
+  */
+ 
+-var uglifycss = require("./");
++var uglifycss = require("../uglifycss-lib");
+ 
+ // Print usage
+ function usage() {

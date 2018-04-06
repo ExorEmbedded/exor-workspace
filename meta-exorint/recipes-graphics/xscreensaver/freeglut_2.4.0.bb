@@ -1,0 +1,24 @@
+DESCRIPTION = "freeglut is a completely OpenSourced alternative to the OpenGL Utility Toolkit (GLUT) library. "
+LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://COPYING;md5=89c0b58a3e01ce3d8254c9f59e78adfb"
+
+DEPENDS = "virtual/libgl libglu"
+
+SRC_URI = "http://dfn.dl.sourceforge.net/sourceforge/freeglut/freeglut-${PV}.tar.gz"
+
+inherit autotools lib_package
+
+export CCLD="${CXX}"
+
+do_configure_prepend() {
+	sed -i -e s:-Werror::g -e s:AC_PROG_CC:AC_PROG_CXX:g configure.ac
+}
+
+do_configure_append() {
+	for i in $(find . -name "Makefile") ; do
+		sed -i -e /^CCLD/d $i
+	done
+}
+
+SRC_URI[md5sum] = "6d16873bd876fbf4980a927cfbc496a1"
+SRC_URI[sha256sum] = "269f2d50ba30b381622eb36f20b552ad43a1b43d544b9075e484e7146e81b052"

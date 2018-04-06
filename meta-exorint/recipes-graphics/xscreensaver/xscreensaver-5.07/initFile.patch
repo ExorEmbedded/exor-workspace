@@ -1,0 +1,19 @@
+--- xscreensaver-5.07/driver/prefs.c	2008-07-03 02:21:22.000000000 +0200
++++ tmp/prefs.c	2016-02-26 15:00:47.493448057 +0100
+@@ -161,13 +161,9 @@
+ 	}
+       else
+ 	{
+-	  const char *home = p->pw_dir;
+-	  const char *name = ".xscreensaver";
+-	  file = (char *) malloc(strlen(home) + strlen(name) + 2);
+-	  strcpy(file, home);
+-	  if (!*home || home[strlen(home)-1] != '/')
+-	    strcat(file, "/");
+-	  strcat(file, name);
++	  const char *etcFile = "/etc/X11/app-defaults/XScreenSaver";
++	  file = (char *) malloc(strlen(etcFile));
++	  strcpy(file, etcFile);
+ 	}
+     }
+ 

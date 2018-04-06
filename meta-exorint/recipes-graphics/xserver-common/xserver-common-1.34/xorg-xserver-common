@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if [ -f /etc/profile ]; then
+	. /etc/profile
+fi
+
+. /etc/X11/functions
+. /etc/exorint.funcs
+
+if [ "$(exorint_ver_type)" = "ROUTER" -o ! -e /dev/fb0 ]; then
+	XSERVER=Xvfb
+	ARGS="-screen scrn 1024x600x16"
+else
+	XSERVER=Xorg
+fi
+
+export USER=root
+export XSERVER_DEFAULT_ORIENTATION=normal
+
+ARGS="${ARGS} -nolisten tcp -br -pn $INPUT_EXTRA_ARGS"

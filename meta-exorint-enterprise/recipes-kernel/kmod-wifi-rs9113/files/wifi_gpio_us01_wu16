@@ -1,0 +1,2 @@
+#Wifi pin for Wu16-uS01
+WIFI_GPIO=40
