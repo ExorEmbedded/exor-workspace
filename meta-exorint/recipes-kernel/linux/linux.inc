@@ -4,7 +4,7 @@ S = "${WORKDIR}/git"
 KERNEL_IMAGETYPE = "zImage"
 KERNEL_EXTRA_ARGS = "dtbs"
 
-#inherit exorint-src
+inherit exorint-src
 inherit exorint-version
 inherit kernel
 require version.inc

@@ -8,5 +8,5 @@ inherit packagegroup
 RDEPENDS_${PN} += "packagegroup-appliance-min"
 
 # graphical applications
-RDEPENDS_${PN} += "jmuconfig-app"
-RDEPENDS_${PN} += "jmlauncher"
+#RDEPENDS_${PN} += "jmuconfig-app"
+#RDEPENDS_${PN} += "jmlauncher"

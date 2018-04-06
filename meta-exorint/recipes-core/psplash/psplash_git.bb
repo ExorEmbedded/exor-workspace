@@ -12,6 +12,7 @@ SRCREV = "99d3dab523dba86b16c6925db2342b532a5d3022"
 
 SRCREV_ca16 = "37011aabb9abd1a65c768f473f47afb5329f276d"
 SRCBRANCH_ca16 = "pgd_ca"
+SRC_URI = "git://github.com/ExorEmbedded/psplash.git;branch=master"
 
 inherit exorint-src
 

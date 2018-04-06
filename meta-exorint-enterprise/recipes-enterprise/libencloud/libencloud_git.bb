@@ -6,6 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=dc68c1fcebd31509ab35c671efe98470"
 PR = "x17"
 SCRBANCH = "exorint-1.x.x"
 SRCREV = "f4ca902dafeac18df4e1349cf70232b6ba40790b"
+SRC_URI = "git://github.com/ExorEmbedded/libencloud.git;branch=${SRCBRANCH}"
 
 inherit exorint-src
 inherit qmake2

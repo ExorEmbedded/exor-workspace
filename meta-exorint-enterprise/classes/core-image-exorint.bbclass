@@ -27,7 +27,7 @@ IMAGE_INSTALL += "libwinbind"
 IMAGE_INSTALL += "xscreensaver"
 IMAGE_INSTALL += "htop"
 IMAGE_INSTALL += "memtester"
-IMAGE_INSTALL += "ibtp"
+#IMAGE_INSTALL += "ibtp"
 
 # UserSpace bootloader manager
 IMAGE_INSTALL_append_usom01 += "bootloader-env"

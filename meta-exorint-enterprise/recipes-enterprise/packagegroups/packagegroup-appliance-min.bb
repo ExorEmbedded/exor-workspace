@@ -5,7 +5,7 @@ PR = "r4"
 inherit packagegroup
 
 # core services
-RDEPENDS_${PN} += "epad"
+#RDEPENDS_${PN} += "epad"
 RDEPENDS_${PN} += "unstable-splash"
 
 # cloud services
@@ -16,4 +16,4 @@ RDEPENDS_${PN} += "router"
 RDEPENDS_${PN} += "psplash"
 
 # control, monitoring
-RDEPENDS_${PN} += "jmuconfig"
+#RDEPENDS_${PN} += "jmuconfig"

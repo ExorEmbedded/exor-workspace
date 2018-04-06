@@ -10,6 +10,8 @@ PR = "r4"
 
 # Local mirror
 SRCREV = "d4ae752ec1fc9116d449cd277993129c10d45db2"
+SRC_URI = "git://github.com/ExorEmbedded/ttf-symbola.git;branch=master"
+
 inherit exorint-src
 
 PACKAGES += "${PN}-hint"

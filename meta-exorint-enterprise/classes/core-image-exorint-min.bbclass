@@ -131,7 +131,7 @@ IMAGE_INSTALL_append_us01-hs07 = " fastboot-checks-fastbootwu16"
 IMAGE_INSTALL_append_us01-au16 = " fastboot-checks-fastbootwu16"
 IMAGE_INSTALL_append_wu16      = " fastboot-checks-fastbootx11"
 
-IMAGE_INSTALL += '${@base_contains("MACHINE_FEATURES", "fastboot", "xsplash", "",d)}'
+#IMAGE_INSTALL += '${@base_contains("MACHINE_FEATURES", "fastboot", "xsplash", "",d)}'
 
 # Kernel modules (out-of-tree)
 IMAGE_INSTALL_append_ca16 = " kmod-wifi-rs9113"

@@ -12,7 +12,7 @@ SRC_URI = "git://github.com/ExorEmbedded/uboot-us01.git"
 
 S = "${WORKDIR}/git"
 
-#inherit exorint-src
+inherit exorint-src
 require ../u-boot.inc
 
 SRC_URI_append_usom03 = " file://fw_env_us03.config"
