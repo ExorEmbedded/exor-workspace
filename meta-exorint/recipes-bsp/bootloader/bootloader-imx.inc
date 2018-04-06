@@ -8,7 +8,11 @@ COMPATIBLE_MACHINE = "usom03"
 SRCNAME = "uboot"
 SRCBRANCH = "uboot2014.04_uS01"
 SRCREV = "9bb7cbd5fecacfd8794ee47c7cd700de00ac5e3a"
+SRC_URI = "git://github.com/ExorEmbedded/uboot-us01.git"
 
+S = "${WORKDIR}/git"
+
+>>>>>>> 9458c16... Move some recipes SRC_URI to github repos:
 inherit exorint-src
 require ../u-boot.inc
 

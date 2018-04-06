@@ -27,8 +27,8 @@ SRCSECTION ?= "exorint"
 SRCPROTO ?= "ssh"
 SRCBRANCH ?= ""
 
-SRC_URI = "${SRCLOC}/${SRCSECTION}/${SRCNAME}${SRCEXT}"
-SRC_URI .= ";protocol=${SRCPROTO}"
-SRC_URI .= '${@base_conditional("SRCBRANCH", "", "", ";branch=${SRCBRANCH}", d)}'
+#SRC_URI = "${SRCLOC}/${SRCSECTION}/${SRCNAME}${SRCEXT}"
+#SRC_URI .= ";protocol=${SRCPROTO}"
+#SRC_URI .= '${@base_conditional("SRCBRANCH", "", "", ";branch=${SRCBRANCH}", d)}'
 
 S = "${WORKDIR}/git"

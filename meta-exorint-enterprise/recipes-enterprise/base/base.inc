@@ -9,6 +9,7 @@ PR = "r132"
 SRCNAME = "yocto-base"
 SRCBRANCH = "rocko-1.x.x"
 SRCREV = "d22f48d26bc122f158ae1359a20c0144c256cb98"
+SRC_URI = "git://github.com/ExorEmbedded/yocto-base.git;branch=${SRCBRANCH}"
 
 inherit autotools
 inherit exorint-src

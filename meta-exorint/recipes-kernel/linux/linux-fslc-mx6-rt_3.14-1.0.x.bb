@@ -12,6 +12,7 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/linux-${LINUX_VERSION}:"
 SRCNAME = "imx6linux"
 SRCBRANCH = "master"
 SRCREV = "51b1b90da84146ac1712a20f670c58acd3f59c02"
+SRC_URI = "git://github.com/ExorEmbedded/linux-us03.git;branch=${SRCBRANCH}"
 
 SRC_URI_append = "\
     file://0001-Added-compiler-gcc6.h.patch \

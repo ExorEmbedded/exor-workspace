@@ -6,6 +6,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=dc68c1fcebd31509ab35c671efe98470"
 PR = "x7"
 SRCREV = "593b464a9ecb7de0596ee061bd5f84398ab6bc5c"
 SRCBRANCH = "exorint-1.x.x"
+SRC_URI = "git://github.com/ExorEmbedded/encloud.git;branch=${SRCBRANCH}"
 
 inherit exorint-src
 

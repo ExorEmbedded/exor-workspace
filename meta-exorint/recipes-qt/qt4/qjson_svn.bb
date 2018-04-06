@@ -6,10 +6,11 @@ LICENSE = "LGPL-2.1"
 LIC_FILES_CHKSUM = "file://README.license;md5=e4fcd0d2d9063745f559ea4809e0484c"
 
 PR = "r2"
-SRCREV = "r89"
+SRCREV = "664398b27e29161637239d811454557139403f21"
 
-SRC_URI = "svn://exorint.unfuddle.com/svn/exorint_unupdwce600/branches/linux/RemoteHMIConfigurator;module=QJson;protocol=https"
-S = "${WORKDIR}/QJson"
+#SRC_URI = "svn://exorint.unfuddle.com/svn/exorint_unupdwce600/branches/linux/RemoteHMIConfigurator;module=QJson;protocol=https"
+SRC_URI = "git://github.com/ExorEmbedded/qjson.git;branch=master"
+S = "${WORKDIR}/git"
 
 inherit qmake2
 
