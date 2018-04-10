@@ -1,0 +1,27 @@
+diff -uNr chromium-52.0.2743.76/chrome/browser/extensions/api/processes/processes_api.cc chromium-52.0.2743.76.2/chrome/browser/extensions/api/processes/processes_api.cc
+--- chromium-52.0.2743.76/chrome/browser/extensions/api/processes/processes_api.cc	2017-06-28 13:30:12.782609591 +0200
++++ chromium-52.0.2743.76.2/chrome/browser/extensions/api/processes/processes_api.cc	2017-06-28 13:28:52.993610440 +0200
+@@ -481,9 +481,7 @@
+     return RespondNow(Error(errors::kInvalidArgument,
+                             base::IntToString(child_process_host_id_)));
+   } else if (child_process_host_id_ == 0) {
+-    // Cannot kill the browser process.
+-    return RespondNow(Error(errors::kNotAllowedToTerminate,
+-                            base::IntToString(child_process_host_id_)));
++    TerminateIfAllowed(base::GetCurrentProcessHandle());
+   }
+ 
+   // Check if it's a renderer.
+@@ -532,12 +530,6 @@
+                  base::IntToString(child_process_host_id_));
+   }
+ 
+-  if (handle == base::GetCurrentProcessHandle()) {
+-    // Cannot kill the browser process.
+-    return Error(errors::kNotAllowedToTerminate,
+-                 base::IntToString(child_process_host_id_));
+-  }
+-
+   base::Process process = base::Process::Open(base::GetProcId(handle));
+   if (!process.IsValid()) {
+     return Error(errors::kProcessNotFound,

@@ -1,0 +1,11 @@
+set shiftwidth=4
+set tabstop=4
+set smartindent
+set expandtab
+set nocompatible
+set backspace=2
+set number
+set nobackup
+set nowritebackup
+set noswapfile
+

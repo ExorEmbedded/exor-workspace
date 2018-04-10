@@ -1,0 +1,13 @@
+--- xscreensaver-5.07/driver/remote.c	2006-05-17 04:07:22.000000000 +0200
++++ tmp/driver/remote.c	2016-03-02 11:42:06.486327979 +0100
+@@ -495,10 +495,6 @@
+ {
+   Window w = 0;
+   int status = send_xscreensaver_command (dpy, command, arg, &w, error_ret);
+-  if (status == 0)
+-    status = xscreensaver_command_response (dpy, w, verbose_p,
+-                                            (command == XA_EXIT),
+-                                            error_ret);
+ 
+   fflush (stdout);
+   fflush (stderr);

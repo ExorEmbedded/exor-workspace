@@ -1,0 +1,14 @@
+diff -uNr chromium-62.0.3202.94-2/chrome/browser/ui/webui/settings/reset_settings_handler.cc chromium-62.0.3202.94/chrome/browser/ui/webui/settings/reset_settings_handler.cc
+--- chromium-62.0.3202.94-2/chrome/browser/ui/webui/settings/reset_settings_handler.cc	2017-12-08 17:15:11.241745106 +0100
++++ chromium-62.0.3202.94/chrome/browser/ui/webui/settings/reset_settings_handler.cc	2017-12-08 17:37:42.132730748 +0100
+@@ -250,7 +250,9 @@
+     default_settings.reset(new BrandcodedDefaultSettings);
+ 
+   GetResetter()->Reset(
+-      ProfileResetter::ALL, std::move(default_settings),
++      ProfileResetter::DEFAULT_SEARCH_ENGINE | ProfileResetter::HOMEPAGE | ProfileResetter::CONTENT_SETTINGS |
++      ProfileResetter::COOKIES_AND_SITE_DATA | ProfileResetter::STARTUP_PAGES | ProfileResetter::PINNED_TABS | ProfileResetter::SHORTCUTS,
++      std::move(default_settings),
+       base::Bind(&ResetSettingsHandler::OnResetProfileSettingsDone,
+                  callback_weak_ptr_factory_.GetWeakPtr(), callback_id,
+                  send_settings, request_origin));

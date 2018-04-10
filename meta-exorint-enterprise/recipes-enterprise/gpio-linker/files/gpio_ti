@@ -1,0 +1,11 @@
+#
+# Defaults gpio name for the boot scripts in /etc/init.d/gpio.sh
+# Un68 --> Wu16 + uS03
+
+INPUT_GPIO_ARRAY=(113 111 112 117 65 51)
+INPUT_NAME_ARRAY=(in1 in2 in3 in4 flt12 flt34)
+
+OUTPUT_GPIO_ARRAY=(82 83 84 85 110 50)
+OUTPUT_NAME_ARRAY=(out1 out2 out3 out4 en12 en34)
+
+

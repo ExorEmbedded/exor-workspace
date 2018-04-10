@@ -1,0 +1,11 @@
+--- ifplugd-0.28.orig/conf/ifplugd.conf
++++ ifplugd-0.28/conf/ifplugd.conf
+@@ -30,7 +30,7 @@
+ # according to /proc/net/dev. Note that the list of interfaces
+ # appearing in /proc/net/dev may depend on which kernel modules you
+ # have loaded.
+-INTERFACES="eth0"
++INTERFACES="auto"
+ 
+ # Additional parameters for ifplugd.
+ # (Run "ifplugd -h" for further information.)

@@ -1,0 +1,105 @@
+#!/bin/sh
+
+# /etc/init.d/router: start and stop Router Service
+
+NAME="router"
+PIDFILE="/var/run/${NAME}.pid"  # fake
+
+. /etc/exorint.funcs
+. /etc/network/defaults
+
+log()
+{
+    echo "$@" | logger -t router
+}
+
+die()
+{
+    echo $@
+    exit 1
+}
+
+do_start()
+{
+    if [ -e ${PIDFILE} ]; then 
+        echo "Already running - refusing to start!"
+        exit 1
+    fi
+
+    echo "Starting ${NAME}"
+
+    # masquerade packets coming from VPN
+    iptables -A PREROUTING -t mangle -i tap0 -j MARK --set-mark 1 -m comment --comment "mark VPN packets for natting"
+    iptables -A PREROUTING -t mangle -i tun0 -j MARK --set-mark 1 -m comment --comment "mark VPN packets for natting"
+    iptables -A POSTROUTING -t nat -j MASQUERADE -m mark --mark 1
+
+    # masquerade packets coming from LAN to outgoing interfaces (internet sharing)
+    for liface in $LAN_INTERFACES; do
+        iptables -A PREROUTING -t mangle -i $liface -j MARK --set-mark 2 -m comment --comment "mark LAN packets for natting"
+    done
+    # => WAN
+    iptables -A POSTROUTING -t nat -j MASQUERADE -o $WAN_INTERFACE -m mark --mark 2
+    # => WLAN
+    for wiface in $(jmuconfig-enabled-wifaces.js); do
+        iptables -A POSTROUTING -t nat -j MASQUERADE -o $wiface -m mark --mark 2
+    done
+    # => PPP
+    iptables -A POSTROUTING -t nat -j MASQUERADE -o ppp0 -m mark --mark 2
+
+    # and allow forwarding of packets to endpoints
+    sysctl -w net.ipv4.ip_forward=1
+
+    touch "${PIDFILE}"
+
+    log "Started"
+    echo "."
+}
+
+do_stop()
+{
+    echo "Stopping ${NAME}"
+
+    sysctl -w net.ipv4.ip_forward=0
+
+    iptables -F
+    iptables -t nat -F
+    iptables -t mangle -F
+
+    rm -f "${PIDFILE}"
+
+    log "Stopped"
+    echo "."
+}
+
+case "$1" in
+
+  start)
+    do_start
+    ;;
+
+  stop)
+    do_stop
+    ;;
+
+  restart)
+
+    do_stop
+    sleep 2
+    do_start
+
+    ;;
+
+  status)
+    if [ ! -e ${PIDFILE} ]; then 
+        echo "NOT running!"
+        exit 1
+    fi
+    echo "Running."
+    ;;
+
+  *)
+    echo "Usage: /etc/init.d/${NAME} {start|stop|restart|status}"
+    exit 1
+esac
+
+exit 0

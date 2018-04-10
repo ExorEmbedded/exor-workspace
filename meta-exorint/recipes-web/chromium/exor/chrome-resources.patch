@@ -1,0 +1,336 @@
+Binary files chromium-64.0.3282.140-2/chrome/browser/resources/protobufs/binary_proto_generator.pyc and chromium-64.0.3282.140/chrome/browser/resources/protobufs/binary_proto_generator.pyc differ
+diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/appearance_page/appearance_page.html chromium-64.0.3282.140/chrome/browser/resources/settings/appearance_page/appearance_page.html
+--- chromium-64.0.3282.140-2/chrome/browser/resources/settings/appearance_page/appearance_page.html	2018-02-15 10:16:03.705755564 +0100
++++ chromium-64.0.3282.140/chrome/browser/resources/settings/appearance_page/appearance_page.html	2018-02-14 11:32:09.706015323 +0100
+@@ -71,12 +71,14 @@
+         </button>
+         <div class="hr"></div>
+ </if>
++<template is="dom-if" if="[[false]]">
+         <div class="settings-row continuation" id="themeRow"
+             hidden="[[!pageVisibility.setTheme]]">
+           <button class="first" icon-class="icon-external" is="cr-link-row"
+               hidden="[[!pageVisibility.setTheme]]"
+               label="$i18n{themes}" sub-label="[[themeSublabel_]]"
+               on-tap="openThemeUrl_"></button>
++
+ <if expr="not is_linux or chromeos">
+           <template is="dom-if" if="[[prefs.extensions.theme.id.value]]">
+             <div class="separator"></div>
+@@ -109,6 +111,7 @@
+           </div>
+ </if>
+         </div>
++
+         <settings-toggle-button elide-label
+             hidden="[[!pageVisibility.homeButton]]"
+             pref="{{prefs.browser.show_home_button}}"
+@@ -159,6 +162,8 @@
+             inverted>
+         </settings-toggle-button>
+ </if>
++</template>
++
+         <div class="settings-box">
+           <div class="start">$i18n{fontSize}</div>
+           <settings-dropdown-menu id="defaultFontSize" label="$i18n{fontSize}"
+diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/basic_page/basic_page.html chromium-64.0.3282.140/chrome/browser/resources/settings/basic_page/basic_page.html
+--- chromium-64.0.3282.140-2/chrome/browser/resources/settings/basic_page/basic_page.html	2018-02-15 10:16:01.701732969 +0100
++++ chromium-64.0.3282.140/chrome/browser/resources/settings/basic_page/basic_page.html	2018-02-15 11:46:20.560437191 +0100
+@@ -106,6 +106,17 @@
+           <div class="flex">$i18n{secondaryUserBannerText}</div>
+         </div>
+ </if>
++        <template is="dom-if" if="[[showPage_(pageVisibility.onStartup)]]"
++            restamp>
++          <settings-section page-title="$i18n{onStartup}" section="onStartup" id="onStartup" style="display: none" >
++            <settings-on-startup-page prefs="{{prefs}}">
++            </settings-on-startup-page>
++          </settings-section>
++        </template>
++        <settings-section page-title="Tool Bar" section="toolBar" id="toolBar">
++          <settings-toggle-button id="ext_enableToolBar" elide-label="" label="Enable Tool Bar" actionable="" toggleStyle="pointer-events: none;">
++          </settings-toggle-button>
++        </settings-section>
+ <if expr="chromeos">
+         <template is="dom-if" if="[[showPage_(pageVisibility.internet)]]"
+             restamp>
+@@ -136,7 +147,7 @@
+             <settings-change-password-page></settings-change-password-page>
+           </settings-section>
+         </template>
+-        <template is="dom-if" if="[[showPage_(pageVisibility.people)]]" restamp>
++        <template is="dom-if" if="[[false]]" restamp>
+           <settings-section page-title="$i18n{peoplePageTitle}"
+               section="people">
+             <settings-people-page prefs="{{prefs}}"></settings-people-page>
+@@ -159,7 +170,7 @@
+           </settings-section>
+         </template>
+ </if>
+-        <template is="dom-if" if="[[showPage_(pageVisibility.search)]]" restamp>
++        <template is="dom-if" if="[[false]]" restamp>
+           <settings-section page-title="$i18n{searchPageTitle}"
+               section="search">
+ <if expr="chromeos">
+@@ -188,7 +199,7 @@
+         </template>
+ </if>
+ <if expr="not chromeos">
+-        <template is="dom-if" if="[[showPage_(pageVisibility.defaultBrowser)]]"
++        <template is="dom-if" if="[[false]]"
+             restamp>
+           <settings-section page-title="$i18n{defaultBrowser}"
+               section="defaultBrowser">
+@@ -196,19 +207,11 @@
+           </settings-section>
+         </template>
+ </if>
+-        <template is="dom-if" if="[[showPage_(pageVisibility.onStartup)]]"
+-            restamp>
+-          <settings-section page-title="$i18n{onStartup}" section="onStartup">
+-            <settings-on-startup-page prefs="{{prefs}}">
+-            </settings-on-startup-page>
+-          </settings-section>
+-        </template>
+       </div>
+     </template>
+ 
+     <template is="dom-if" if="[[showAdvancedSettings_(pageVisibility.advancedSettings)]]">
+-      <template is="dom-if" if="[[showAdvancedToggle_(
+-          inSearchMode, hasExpandedSection_)]]">
++      <template is="dom-if" if="[[false]]">
+         <div id="toggleSpacer"></div>
+         <h2 id="toggleContainer">
+           <paper-button id="advancedToggle" active="{{advancedToggleExpanded}}"
+@@ -222,9 +225,7 @@
+ 
+       <template is="settings-idle-load" id="advancedPageTemplate"
+           url="/lazy_load.html">
+-        <div id="advancedPage" hidden$="[[!showAdvancedPage_(
+-            currentRoute_, inSearchMode, hasExpandedSection_,
+-            advancedToggleExpanded)]]">
++        <div id="advancedPage">
+ <if expr="chromeos">
+           <template is="dom-if" if="[[showPage_(pageVisibility.dateTime)]]"
+               restamp>
+@@ -254,7 +255,7 @@
+               </settings-passwords-and-forms-page>
+             </settings-section>
+           </template>
+-          <template is="dom-if" if="[[showPage_(pageVisibility.languages)]]"
++          <template is="dom-if" if="[[false]]"
+               restamp>
+             <settings-section page-title="$i18n{languagesPageTitle}"
+                 section="languages">
+@@ -262,7 +263,7 @@
+               </settings-languages-page>
+             </settings-section>
+           </template>
+-          <template is="dom-if" if="[[showPage_(pageVisibility.downloads)]]"
++          <template is="dom-if" if="[[false]]"
+               restamp>
+             <settings-section page-title="$i18n{downloadsPageTitle}"
+                 section="downloads">
+@@ -271,7 +272,7 @@
+               </settings-downloads-page>
+             </settings-section>
+           </template>
+-          <template is="dom-if" if="[[showPage_(pageVisibility.printing)]]"
++          <template is="dom-if" if="[[false]]"
+               restamp>
+             <settings-section page-title="$i18n{printingPageTitle}"
+                 section="printing">
+@@ -296,7 +297,7 @@
+             </settings-section>
+           </template>
+ <if expr="not chromeos">
+-          <template is="dom-if" if="[[showPage_(pageVisibility.system)]]"
++          <template is="dom-if" if="[[false]]"
+               restamp>
+             <settings-section page-title="$i18n{systemPageTitle}"
+                 section="system">
+diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/controls/settings_toggle_button.html chromium-64.0.3282.140/chrome/browser/resources/settings/controls/settings_toggle_button.html
+--- chromium-64.0.3282.140-2/chrome/browser/resources/settings/controls/settings_toggle_button.html	2018-02-15 10:16:02.529742305 +0100
++++ chromium-64.0.3282.140/chrome/browser/resources/settings/controls/settings_toggle_button.html	2018-02-15 12:08:45.583196890 +0100
+@@ -66,7 +66,8 @@
+           on-change="onChange_"
+           aria-label$="[[getAriaLabel_(label, ariaLabel)]]"
+           aria-describedby="subLabel"
+-          disabled="[[controlDisabled_(disabled, pref)]]">
++          disabled="[[controlDisabled_(disabled, pref)]]"
++          style="[[getStyle_()]]">
+       </cr-toggle>
+     </div>
+   </template>
+diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/controls/settings_toggle_button.js chromium-64.0.3282.140/chrome/browser/resources/settings/controls/settings_toggle_button.js
+--- chromium-64.0.3282.140-2/chrome/browser/resources/settings/controls/settings_toggle_button.js	2018-02-15 10:16:02.465741584 +0100
++++ chromium-64.0.3282.140/chrome/browser/resources/settings/controls/settings_toggle_button.js	2018-02-15 12:11:48.945247689 +0100
+@@ -58,6 +58,14 @@
+     return this.label || this.ariaLabel;
+   },
+ 
++  /**
++   * @return {string}
++   * @private
++   */
++  getStyle_: function() {
++    return this.getAttribute("toggleStyle");
++  },
++
+   /** @private */
+   onDisableOrPrefChange_: function() {
+     if (this.controlDisabled_()) {
+diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/on_startup_page/on_startup_page.html chromium-64.0.3282.140/chrome/browser/resources/settings/on_startup_page/on_startup_page.html
+--- chromium-64.0.3282.140-2/chrome/browser/resources/settings/on_startup_page/on_startup_page.html	2018-02-15 10:16:02.781745147 +0100
++++ chromium-64.0.3282.140/chrome/browser/resources/settings/on_startup_page/on_startup_page.html	2018-02-14 14:37:02.457669168 +0100
+@@ -19,12 +19,12 @@
+       <settings-radio-group id="onStartupRadioGroup"
+           pref="{{prefs.session.restore_on_startup}}">
+         <controlled-radio-button name="[[prefValues_.OPEN_NEW_TAB]]"
++            id="ext_startupOpenSettings"
+             pref="[[prefs.session.restore_on_startup]]"
+-            label="$i18n{onStartupOpenNewTab}"
++            label="Open Settings"
+             no-extension-indicator>
+         </controlled-radio-button>
+-        <template is="dom-if" if="[[showIndicator_(
+-            ntpExtension_, prefs.session.restore_on_startup.value)]]">
++        <template is="dom-if" if="[[false]]">
+           <extension-controlled-indicator
+               extension-id="[[ntpExtension_.id]]"
+               extension-name="[[ntpExtension_.name]]"
+@@ -33,17 +33,19 @@
+           </extension-controlled-indicator>
+         </template>
+         <controlled-radio-button name="[[prefValues_.CONTINUE]]"
++            id="ext_startupContinue"
+             pref="[[prefs.session.restore_on_startup]]"
+             label="$i18n{onStartupContinue}">
+         </controlled-radio-button>
+         <controlled-radio-button name="[[prefValues_.OPEN_SPECIFIC]]"
++            id="ext_startupOpenHomepage"
+             pref="[[prefs.session.restore_on_startup]]"
+-            label="$i18n{onStartupOpenSpecific}">
++            label="Open Homepage">
+         </controlled-radio-button>
+       </settings-radio-group>
+     </div>
+     <template is="dom-if"
+-        if="[[showStartupUrls_(prefs.session.restore_on_startup.value)]]">
++        if="[[true)]]">
+       <settings-startup-urls-page prefs="[[prefs]]">
+       </settings-startup-urls-page>
+     </template>
+diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/on_startup_page/startup_urls_page.html chromium-64.0.3282.140/chrome/browser/resources/settings/on_startup_page/startup_urls_page.html
+--- chromium-64.0.3282.140-2/chrome/browser/resources/settings/on_startup_page/startup_urls_page.html	2018-02-15 10:16:02.789745236 +0100
++++ chromium-64.0.3282.140/chrome/browser/resources/settings/on_startup_page/startup_urls_page.html	2018-02-14 14:23:28.192936789 +0100
+@@ -17,41 +17,29 @@
+ <dom-module id="settings-startup-urls-page">
+   <template>
+     <style include="settings-shared action-link iron-flex">
+-      .list-frame {
++      #outer {
+         @apply(--settings-list-frame-padding);
++        max-height: 395px;  /** Enough height to show six entries. */
+       }
+ 
+-      .list-frame > div {
+-        border-top: var(--cr-separator-line);
+-      }
+-
+-      #outer {
+-        @apply(--settings-list-frame-padding);
+-        max-height: 355px;  /** Enough height to show six entries. */
++      #container iron-list > settings-startup-url-entry:not(:first-of-type) {
++        border-top: var(--settings-separator-line);
+       }
+ 
+       #container settings-startup-url-entry {
+         cursor: default;
+       }
+     </style>
+-    <div id="outer" class="layout vertical flex">
++    <div id="outer" class="layout vertical flex vertical-list">
+       <div id="container" class="scroll-container" scrollable>
+-        <iron-list items="[[startupPages_]]" scroll-target="container"
+-            preserve-focus risk-selection class="cr-separators">
+-          <template>
+-            <settings-startup-url-entry model="[[item]]" first$="[[!index]]"
+-                tabindex$="[[tabIndex]]" iron-list-tab-index="[[tabIndex]]"
+-                last-focused="{{lastFocused_}}"
+-                editable="[[shouldAllowUrlsEdit_(
+-                    prefs.session.startup_urls.enforcement)]]">
+-            </settings-startup-url-entry>
+-          </template>
+-        </iron-list>
++         <div class="middle hide-overflow">
++	       <paper-input tabindex="0" aria-disabled="false" style="display: inline-block;" label="Homepage">
++            </paper-input>
++            <paper-button id="ext_changeHomepage" class="action-button" role="button" tabindex="-1" animated="" aria-disabled="false" elevation="0" style="margin-left: 15px; display: inline;">Change</paper-button>
++            <div id="ext_homepage" class="text-elide secondary" style="padding: 10px 0 10px 0"></div>
++         </div>
+       </div>
+-    </div>
+-    <div class="list-frame">
+-      <template is="dom-if" if="[[shouldAllowUrlsEdit_(
+-          prefs.session.startup_urls.enforcement)]]" restamp>
++      <template is="dom-if" if="[[false]]" restamp>
+         <div class="list-item" id="addPage">
+           <a is="action-link" class="list-button" on-tap="onAddPageTap_">
+             $i18n{onStartupAddNewPage}
+--- chromium-65.0.3325.162.2/chrome/browser/resources/settings/on_startup_page/startup_url_dialog.html	2018-03-27 15:34:19.790247377 +0200
++++ chromium-65.0.3325.162/chrome/browser/resources/settings/on_startup_page/startup_url_dialog.html	2018-03-27 15:36:03.771691146 +0200
+@@ -11,14 +11,44 @@
+     <style include="settings-shared"></style>
+     <dialog is="cr-dialog" id="dialog" close-text="$i18n{close}">
+       <div slot="title">[[dialogTitle_]]</div>
+-      <div slot="body">
+-        <paper-input always-float-label id="url" label="$i18n{onStartupSiteUrl}"
+-            value="{{url_}}" on-input="validate_" spellcheck="false"
+-            maxlength="[[urlLimit_]]" invalid="[[error_]]"
+-            char-counter="[[showCharCounter_(error_)]]" autofocus
+-            error-message="[[errorMessage_('$i18nPolymer{onStartupInvalidUrl}',
+-                '$i18nPolymer{onStartupUrlTooLong}', error_)]]">
+-        </paper-input>
++        <div slot="body" always-float-label="">
++          <style scoped=>:host {
++              display: block;
++            }
++
++           :host([focused]) {
++             outline: none;
++           }
++
++           :host([hidden]) {
++             display: none !important;
++           }
++
++           input::-webkit-input-placeholder {
++             color: var(--paper-input-container-color,var(--secondary-text-color));
++           }
++
++           input:-moz-placeholder {
++             color: var(--paper-input-container-color,var(--secondary-text-color));
++           }
++
++           input::-moz-placeholder {
++             color: var(--paper-input-container-color,var(--secondary-text-color));
++           }
++
++           input:-ms-input-placeholder {
++             color: var(--paper-input-container-color,var(--secondary-text-color));
++           }
++
++           label {
++             pointer-events: none;
++           }
++         </style>
++         <paper-input-container>
++           <content select="[prefix]"></content>
++           <label aria-hidden="true" for="input" id="paper-input-label-3">Site URL</label>
++           <input is="iron-input" id="input" autocomplete="off" placeholder="" autocapitalize="none" autocorrect="off" aria-describedby="" aria-labelledby="paper-input-label-3" autofocus="" tabindex="0">
++         </paper-input-container>
+       </div>
+       <div slot="button-container">
+         <paper-button class="cancel-button" on-tap="onCancelTap_"

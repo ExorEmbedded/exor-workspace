@@ -1,0 +1,11 @@
+--- metacity-2.34.13-orig/src/core/display.c	2017-08-09 17:46:30.166925137 -0700
++++ metacity-2.34.13/src/core/display.c	2017-08-09 17:46:56.998926183 -0700
+@@ -742,7 +742,7 @@
+       tmp = tmp->next;
+     }
+ 
+-  {
++  if (0) {
+     Window focus;
+     int ret_to;
+ 

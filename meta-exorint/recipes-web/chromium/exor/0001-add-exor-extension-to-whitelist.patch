@@ -1,0 +1,38 @@
+diff -uNr chromium-64.0.3282.140-2/chrome/common/extensions/chrome_extensions_client.cc chromium-64.0.3282.140/chrome/common/extensions/chrome_extensions_client.cc
+--- chromium-64.0.3282.140-2/chrome/common/extensions/chrome_extensions_client.cc	2018-02-09 12:29:31.679906986 +0100
++++ chromium-64.0.3282.140/chrome/common/extensions/chrome_extensions_client.cc	2018-02-09 12:31:56.313459290 +0100
+@@ -124,6 +124,9 @@
+   // TODO(dmazzoni): remove this once we have an extension API that
+   // allows any extension to request read-only access to webui pages.
+   scripting_whitelist_.push_back(extension_misc::kChromeVoxExtensionId);
++
++  scripting_whitelist_.push_back(extension_misc::kExorExtensionId);
++
+   InitializeWebStoreUrls(base::CommandLine::ForCurrentProcess());
+ }
+ 
+diff -uNr chromium-64.0.3282.140-2/chrome/common/extensions/extension_constants.cc chromium-64.0.3282.140/chrome/common/extensions/extension_constants.cc
+--- chromium-64.0.3282.140-2/chrome/common/extensions/extension_constants.cc	2018-02-09 12:29:31.679906986 +0100
++++ chromium-64.0.3282.140/chrome/common/extensions/extension_constants.cc	2018-02-09 12:32:45.081982762 +0100
+@@ -91,6 +91,9 @@
+     "kgejglhpjiefppelpmljglcjbhoiplfn";
+ #endif
+ 
++const char kExorExtensionId[] =
++    "pppblgnjgngbhkjehblmbfeklkbfamdm";
++
+ const char kAppStateNotInstalled[] = "not_installed";
+ const char kAppStateInstalled[] = "installed";
+ const char kAppStateDisabled[] = "disabled";
+diff -uNr chromium-64.0.3282.140-2/chrome/common/extensions/extension_constants.h chromium-64.0.3282.140/chrome/common/extensions/extension_constants.h
+--- chromium-64.0.3282.140-2/chrome/common/extensions/extension_constants.h	2018-02-09 12:29:31.735907587 +0100
++++ chromium-64.0.3282.140/chrome/common/extensions/extension_constants.h	2018-02-09 12:33:03.434179760 +0100
+@@ -216,6 +216,8 @@
+ // The extension id of the ChromeVox extension.
+ extern const char kChromeVoxExtensionId[];
+ 
++extern const char kExorExtensionId[];
++
+ #if defined(OS_CHROMEOS)
+ // Path to preinstalled ChromeVox screen reader extension (relative to
+ // |chrome::DIR_RESOURCES|).

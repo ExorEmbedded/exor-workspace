@@ -1,0 +1,27 @@
+diff -uNr chromium-64.0.3282.1402/media/media_options.gni chromium-64.0.3282.140/media/media_options.gni
+--- chromium-64.0.3282.1402/media/media_options.gni	2018-02-12 17:21:02.322274246 +0100
++++ chromium-64.0.3282.140/media/media_options.gni	2018-02-12 17:22:01.862923309 +0100
+@@ -105,23 +105,8 @@
+ 
+ # Use a second declare_args() to pick up possible overrides of |use_cras|.
+ declare_args() {
+-  # Enables runtime selection of PulseAudio library.
+   use_pulseaudio = false
+-
+-  # Enables runtime selection of ALSA library for audio.
+   use_alsa = false
+-
+-  # Alsa should be used on non-Android, non-Mac POSIX systems.
+-  # Alsa should be used on desktop Chromecast and audio-only Chromecast builds.
+-  if (is_posix && !is_android && !is_mac && !is_fuchsia &&
+-      (!is_chromecast || is_cast_desktop_build || is_cast_audio_only)) {
+-    use_alsa = true
+-
+-    # Pulse is not supported on Chromecast platforms.
+-    if (!use_cras && !is_chromecast) {
+-      use_pulseaudio = true
+-    }
+-  }
+ }
+ 
+ # Use another declare_args() to pick up possible overrides of media_use_ffmpeg

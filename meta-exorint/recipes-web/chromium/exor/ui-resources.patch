@@ -1,0 +1,59 @@
+diff -uNr chromium-64.0.3282.140-2/ui/webui/resources/cr_elements/cr_toolbar/cr_toolbar.html chromium-64.0.3282.140/ui/webui/resources/cr_elements/cr_toolbar/cr_toolbar.html
+--- chromium-64.0.3282.140-2/ui/webui/resources/cr_elements/cr_toolbar/cr_toolbar.html	2018-02-15 12:41:46.909576782 +0100
++++ chromium-64.0.3282.140/ui/webui/resources/cr_elements/cr_toolbar/cr_toolbar.html	2018-02-14 11:27:49.399119958 +0100
+@@ -129,7 +129,34 @@
+     </style>
+     <div id="leftContent">
+       <div id="leftSpacer">
++
++        <style>
++        .inline {
++          display: inline-block;
++        }
++        </style>
++
++       <div id="ext_back" style="border: solid white; border-width: 0px 1px 0px 0px; margin-right:35px">
++
++         <style scoped="">
++           div.arrowLeft {
++             border: solid white;
++             border-width: 0 4px 4px 0;
++             padding: 3px;
++             transform: rotate(135deg);
++             -webkit-transform: rotate(135deg);
++           }
++         </style>
++         <div class="inline arrowLeft"></div>
++         <div class="inline"><h1>Back</h1></div>
++
++       </div>
++       <div id="ext_systemSettings">
++	     <h1>System Settings</h1>
++       </div>  
++		  
+         <!-- Note: showing #menuPromo relies on this dom-if being [restamp]. -->
++        <template is="dom-if" if="[[false]]" restamp>
+         <template is="dom-if" if="[[showMenu]]" restamp>
+           <button id="menuButton" is="paper-icon-button-light"
+               class="icon-menu-white no-overlap"
+@@ -146,9 +173,12 @@
+           </template>
+         </template>
+         <h1>[[pageName]]</h1>
++        </template>
+       </div>
++      
+     </div>
+ 
++<template is="dom-if" if="[[false]]">
+     <div id="centeredContent" hidden$="[[!showSearch]]">
+       <cr-toolbar-search-field id="search" narrow="[[narrow]]"
+           label="[[searchPrompt]]" clear-label="[[clearLabel]]"
+@@ -159,6 +189,7 @@
+           query-matches="{{narrow}}">
+       </iron-media-query>
+     </div>
++</template>
+ 
+     <div id="rightContent">
+       <content select=".more-actions"></content>

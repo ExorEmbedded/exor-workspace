@@ -1,0 +1,7 @@
+<jmlauncher>
+<package>
+  <name>Chromium</name>
+  <installationFolder>chromium</installationFolder>
+  <version></version>
+</package>
+</jmlauncher>

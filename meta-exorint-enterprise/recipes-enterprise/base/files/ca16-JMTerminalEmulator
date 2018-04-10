@@ -1,0 +1,67 @@
+#!/bin/bash
+#
+# UN66: Start Terminal Emulator when no projects are loaded [#472]
+
+log()
+{
+    echo "$@" | logger -t "JMTerminalEmulator"
+}
+
+START_WHEN_NO_PROJECTS=$(dbus-send --print-reply=literal --system --dest=com.exor.EPAD '/' \
+                         com.exor.EPAD.getSystemParameter string:"carel/services/terminalEmulator/startWhenNoProjects" \
+                         | tr -d ' ')
+JMOBILE_SYSTEM_FILE="/mnt/data/hmi/qthmi/deploy/config/system.xml"
+JMOBILE_WORKSPACE_DIR="/mnt/data/hmi/qthmi/deploy/workspace/"
+
+if [ ! -r "${JMOBILE_SYSTEM_FILE}" ]; then
+    log "JMobile system file not readable, giving up!"
+    return
+fi
+
+if [ ! -r "${JMOBILE_WORKSPACE_DIR}" ]; then
+    log "JMobile workspace not readable, giving up!"
+    return
+fi
+
+restore_latest_prj()
+{
+    OTHER_PROJECTS=$(find "${JMOBILE_WORKSPACE_DIR}" -type f -name *.jpr | grep -v '/terminal_emulator.jpr$')
+    if [ "${OTHER_PROJECTS}" = "" ]; then
+        log "Restore - no other projects found"
+    else
+        MOST_RECENT_PROJECT_FILE=$(ls -Art ${OTHER_PROJECTS} | tail -n 1)
+        MOST_RECENT_PROJECT_PATH=$(dirname ${MOST_RECENT_PROJECT_FILE} | sed -e "s|${JMOBILE_WORKSPACE_DIR}||")
+        MOST_RECENT_PROJECT_NAME=$(basename ${MOST_RECENT_PROJECT_FILE} .jpr)
+        log "Restore - most recent project: ${MOST_RECENT_PROJECT_FILE}"
+        # Note: we assume project file name is the same as project dir
+        sed -i \
+            -e "s|<projectRelativePath.*|<projectRelativePath>workspace/${MOST_RECENT_PROJECT_PATH}</projectRelativePath>|" \
+            -e "s|<projectName.*|<projectName>${MOST_RECENT_PROJECT_NAME}.jpr</projectName>|" \
+            "${JMOBILE_SYSTEM_FILE}"
+    fi
+}
+
+if [ "${START_WHEN_NO_PROJECTS}" = "1" ]; then
+    log "Enabled via System Parameters"
+    if grep -q -e "<projectName\ */>" -e "<projectName>\ *</projectName>" "${JMOBILE_SYSTEM_FILE}"; then
+        log "No project set in $(basename ${JMOBILE_SYSTEM_FILE}) - forcing Terminal Emulator"
+        sed -i \
+            -e "s|<projectRelativePath.*|<projectRelativePath>workspace/_builtin/terminal_emulator</projectRelativePath>|" \
+            -e "s|<projectName.*|<projectName>terminal_emulator.jpr</projectName>|" \
+            "${JMOBILE_SYSTEM_FILE}"
+    elif grep -q "<projectName>terminal_emulator.jpr</projectName>" "${JMOBILE_SYSTEM_FILE}"; then
+        log "Terminal Emulator already set in $(basename ${JMOBILE_SYSTEM_FILE})"
+    else
+        log "Other project set => doing nothing"
+    fi
+else
+    log "Disabled via System Parameters"
+    if grep -q "<projectName>terminal_emulator.jpr</projectName>" "${JMOBILE_SYSTEM_FILE}"; then
+        log "Found terminal emulator - removing it"
+        sed -i \
+            -e "s|<projectRelativePath>workspace/_builtin/terminal_emulator</projectRelativePath>|<projectRelativePath/>|" \
+            -e "s|<projectName>terminal_emulator.jpr</projectName>|<projectName/>|" \
+            "${JMOBILE_SYSTEM_FILE}"
+        restore_latest_prj
+    fi
+fi

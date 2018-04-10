@@ -1,0 +1,14 @@
+diff -uNr chromium-64.0.3282.140.2/net/url_request/url_request.cc chromium-64.0.3282.140/net/url_request/url_request.cc
+--- chromium-64.0.3282.140.2/net/url_request/url_request.cc	2018-03-14 09:21:26.133268609 +0100
++++ chromium-64.0.3282.140/net/url_request/url_request.cc	2018-03-14 17:13:35.795480813 +0100
+@@ -1048,6 +1048,10 @@
+   status_ = URLRequestStatus();
+   OnCallToDelegate();
+   delegate_->OnSSLCertificateError(this, ssl_info, fatal);
++  if (network_delegate_) {
++    network_delegate_->NotifyCompleted(this, job_.get() != NULL,
++                                       net::ERR_CERT_INVALID);
++  }
+ }
+ 
+ bool URLRequest::CanGetCookies(const CookieList& cookie_list) const {

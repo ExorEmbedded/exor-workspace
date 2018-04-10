@@ -1,0 +1,28 @@
+--- chromium-64.0.3282.140-2/chrome/browser/first_run/first_run.cc	2018-02-22 11:40:57.469195495 +0100
++++ chromium-64.0.3282.140/chrome/browser/first_run/first_run.cc	2018-02-16 14:03:54.387360841 +0100
+@@ -599,9 +599,12 @@
+ }
+ 
+ bool ShouldShowWelcomePage() {
++  return false;
++/*
+   bool retval = g_should_show_welcome_page;
+   g_should_show_welcome_page = false;
+   return retval;
++*/
+ }
+ 
+ bool IsOnWelcomePage(content::WebContents* contents) {
+diff -uNr chromium-64.0.3282.140.2/chrome/browser/ui/startup/startup_tab_provider.cc chromium-64.0.3282.140/chrome/browser/ui/startup/startup_tab_provider.cc
+--- chromium-64.0.3282.140.2/chrome/browser/ui/startup/startup_tab_provider.cc	2018-03-14 09:24:38.387719273 +0100
++++ chromium-64.0.3282.140/chrome/browser/ui/startup/startup_tab_provider.cc	2018-03-14 10:17:53.243520412 +0100
+@@ -178,7 +178,8 @@
+ bool StartupTabProviderImpl::CanShowWelcome(bool is_signin_allowed,
+                                             bool is_supervised_user,
+                                             bool is_force_signin_enabled) {
+-  return is_signin_allowed && !is_supervised_user && !is_force_signin_enabled;
++  return false;
++//  return is_signin_allowed && !is_supervised_user && !is_force_signin_enabled;
+ }
+ 
+ // static

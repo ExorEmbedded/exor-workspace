@@ -1,0 +1,111 @@
+# There are a number of modifiers that are allowed to be used in some
+# of the different fields. They provide the following subsitutions:
+#
+# %n the "kernel number" of the device.
+#    For example, 'sda3' has a "kernel number" of '3'
+# %e the smallest number for that name which does not matches an existing node
+# %k the kernel name for the device
+# %M the kernel major number for the device
+# %m the kernel minor number for the device
+# %b the bus id for the device
+# %c the string returned by the PROGRAM
+# %s{filename} the content of a sysfs attribute
+# %% the '%' char itself
+#
+
+#
+# File System
+#
+
+# USB stick automounting
+KERNEL=="sda", SUBSYSTEMS=="usb", ENV{myname}="usbmemory"
+KERNEL=="sda1", SUBSYSTEMS=="usb", ENV{myname}="usbmemory"
+KERNEL=="sda[2-9]", SUBSYSTEMS=="usb", ENV{myname}="usbmemoryp%n"
+KERNEL=="sdb", SUBSYSTEMS=="block", ENV{myname}="usbmemory2"
+KERNEL=="sdb1", SUBSYSTEMS=="block", ENV{myname}="usbmemory2"
+KERNEL=="sdb[2-9]", SUBSYSTEMS=="usb", ENV{myname}="usbmemory2p%n"
+KERNEL=="sdc", SUBSYSTEMS=="usb", ENV{myname}="usbmemory3"
+KERNEL=="sdc1", SUBSYSTEMS=="usb", ENV{myname}="usbmemory3"
+KERNEL=="sdc[2-9]", SUBSYSTEMS=="usb", ENV{myname}="usbmemory3p%n"
+KERNEL=="sdd", SUBSYSTEMS=="usb", ENV{myname}="usbmemory4"
+KERNEL=="sdd1", SUBSYSTEMS=="usb", ENV{myname}="usbmemory4"
+KERNEL=="sdd[2-9]", SUBSYSTEMS=="usb", ENV{myname}="usbmemory4p%n"
+KERNEL=="sd?[1-9]", SUBSYSTEMS=="usb", ACTION=="add",    RUN+="/etc/udev/scripts/mount.sh"
+KERNEL=="sd?[1-9]", SUBSYSTEMS=="usb", ACTION=="remove", RUN+="/etc/udev/scripts/mount.sh"
+KERNEL=="sd?", SUBSYSTEMS=="usb", ACTION=="add",    RUN+="/etc/udev/scripts/mount.sh"
+KERNEL=="sd?", SUBSYSTEMS=="usb", ACTION=="remove", RUN+="/etc/udev/scripts/mount.sh"
+
+# USB stick autorun
+SUBSYSTEM=="block", KERNEL=="sda", ACTION=="add", RUN+="/etc/udev/scripts/usb_autorun.sh usbmemory"
+SUBSYSTEM=="block", KERNEL=="sda1", ACTION=="add", RUN+="/etc/udev/scripts/usb_autorun.sh usbmemory"
+SUBSYSTEM=="block", KERNEL=="sdb", ACTION=="add", RUN+="/etc/udev/scripts/usb_autorun.sh usbmemory2"
+SUBSYSTEM=="block", KERNEL=="sdb1", ACTION=="add", RUN+="/etc/udev/scripts/usb_autorun.sh usbmemory2"
+SUBSYSTEM=="block", KERNEL=="sdc", ACTION=="add", RUN+="/etc/udev/scripts/usb_autorun.sh usbmemory3"
+SUBSYSTEM=="block", KERNEL=="sdc1", ACTION=="add", RUN+="/etc/udev/scripts/usb_autorun.sh usbmemory3"
+
+# auto-mount EMMC
+ACTION=="add", KERNEL=="mmcblk1p[0-4]", SUBSYSTEM=="block", RUN+="/etc/udev/scripts/mount.sh"
+ACTION=="add", KERNEL=="mmcblk1p5", ENV{opts}="ro", SUBSYSTEM=="block", RUN+="/etc/udev/scripts/mount.sh"
+ACTION=="add", KERNEL=="mmcblk1p6", ENV{opts}="usrquota,grpquota", SUBSYSTEM=="block", RUN+="/etc/udev/scripts/mount.sh", \
+    RUN+="/etc/udev/scripts/datapart_setup.sh"
+# Android/WCE7 partitions
+ACTION=="add", KERNEL=="mmcblk1p[7-9]", ENV{opts}="ro", SUBSYSTEM=="block", RUN+="/etc/udev/scripts/mount.sh"
+ACTION=="add", KERNEL=="mmcblk1p10", ENV{opts}="ro", SUBSYSTEM=="block", RUN+="/etc/udev/scripts/mount.sh"
+ACTION=="remove", KERNEL=="mmcblk1p[0-6]", SUBSYSTEM=="block", RUN+="/etc/udev/scripts/mount.sh"
+
+# Auto-mount any SD card
+KERNEL=="mmcblk0p1", SUBSYSTEM=="block", ENV{myname}="sdcard"
+KERNEL=="mmcblk0p[2-9]", SUBSYSTEM=="block", ENV{myname}="sdcardp%n"
+ACTION=="add", KERNEL=="mmcblk0p[0-9]", SUBSYSTEM=="block", RUN+="/etc/udev/scripts/mount.sh"
+ACTION=="remove", KERNEL=="mmcblk0p[0-9]", SUBSYSTEM=="block", RUN+="/etc/udev/scripts/mount.sh"
+
+#
+# Communication
+#
+
+# Create a symlink to the pwm-beeper input device
+SUBSYSTEMS=="input", KERNEL=="event[0-9]*", KERNELS=="input[0-9]*", ATTRS{name}=="pwm-beeper", SYMLINK+="input/beeper"
+
+# All other communication devices belong to 'comm' group (also plain 'user' belongs to it)
+KERNEL=="gpio*", PROGRAM="/bin/sh -c '\
+    /bin/chgrp -R comm /sys/class/gpio; /bin/chmod -R 770 /sys/class/gpio; \
+    /bin/chgrp -R comm /sys/devices/virtual/gpio; /bin/chmod -R 770 /sys/devices/virtual/gpio; \
+    '"
+SUBSYSTEM=="spidev", GROUP="comm", MODE="0660"
+SUBSYSTEM=="i2c-dev", GROUP="comm", MODE="0660"
+
+#
+# FRAM
+#
+
+SUBSYSTEM=="spi", ATTRS{modalias}=="spi:at25", PROGRAM="/bin/ln -s /sys/bus/spi/devices/%k/eeprom /dev/fram"
+
+#
+# PLxx plugins
+#
+
+DRIVER=="plxx_manager", PROGRAM="/bin/sh -c '\
+        NAME=$(echo %k | cut -d. -f1 ); \
+        /bin/ln -s /sys/bus/platform/devices/%k /dev/$NAME"
+
+#
+# Video
+#
+
+SUBSYSTEM=="backlight", RUN+="/bin/chgrp video /sys/class/backlight/%k/brightness /sys/class/backlight/%k/bl_power", \
+    RUN+="/bin/chmod 664 /sys/class/backlight/%k/brightness /sys/class/backlight/%k/bl_power"
+
+#
+# Mouse
+#
+
+KERNEL=="mouse[1-9]", ACTION=="add",  RUN+="/etc/udev/scripts/mouse.sh"
+KERNEL=="mouse[1-9]", ACTION=="remove",  RUN+="/etc/udev/scripts/mouse.sh"
+
+# Create symlinks for uart ports
+KERNEL=="ttyUSB0", SUBSYSTEM=="tty", SYMLINK="com10"
+KERNEL=="ttyUSB1", SUBSYSTEM=="tty", SYMLINK="com11"
+KERNEL=="ttyUSB2", SUBSYSTEM=="tty", SYMLINK="com12"
+KERNEL=="ttyUSB3", SUBSYSTEM=="tty", SYMLINK="com13"
+KERNEL=="ttyUSB4", SUBSYSTEM=="tty", SYMLINK="com14"
+

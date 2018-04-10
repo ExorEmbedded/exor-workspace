@@ -1,0 +1,36 @@
+Index: nginx-1.12.2/src/http/ngx_http_header_filter_module.c
+===================================================================
+--- nginx-1.12.2.orig/src/http/ngx_http_header_filter_module.c
++++ nginx-1.12.2/src/http/ngx_http_header_filter_module.c
+@@ -278,6 +278,7 @@ ngx_http_header_filter(ngx_http_request_
+ 
+     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
+ 
++    /* #908 Cyber Security Plugin ID 88099 Hide Server header
+     if (r->headers_out.server == NULL) {
+         if (clcf->server_tokens == NGX_HTTP_SERVER_TOKENS_ON) {
+             len += sizeof(ngx_http_server_full_string) - 1;
+@@ -289,6 +290,7 @@ ngx_http_header_filter(ngx_http_request_
+             len += sizeof(ngx_http_server_string) - 1;
+         }
+     }
++    */
+ 
+     if (r->headers_out.date == NULL) {
+         len += sizeof("Date: Mon, 28 Sep 1970 06:00:00 GMT" CRLF) - 1;
+@@ -447,6 +449,7 @@ ngx_http_header_filter(ngx_http_request_
+     }
+     *b->last++ = CR; *b->last++ = LF;
+ 
++    /* #908 Cyber Security Plugin ID 88099 Hide Server header
+     if (r->headers_out.server == NULL) {
+         if (clcf->server_tokens == NGX_HTTP_SERVER_TOKENS_ON) {
+             p = ngx_http_server_full_string;
+@@ -463,6 +466,7 @@ ngx_http_header_filter(ngx_http_request_
+ 
+         b->last = ngx_cpymem(b->last, p, len);
+     }
++    */
+ 
+     if (r->headers_out.date == NULL) {
+         b->last = ngx_cpymem(b->last, "Date: ", sizeof("Date: ") - 1);

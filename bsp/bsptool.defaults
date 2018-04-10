@@ -1,0 +1,65 @@
+#
+# Setup Variables
+#
+
+# Yocto
+YOCTO="poky"
+YOCTOENV="oe-init-build-env"
+
+# Images
+YOCTOIMAGESM=""
+YOCTOIMAGESM="${YOCTOIMAGESM} core-image-mainos-branding-exorint"
+
+YOCTOIMAGESC=""
+YOCTOIMAGESC="${YOCTOIMAGESC} core-image-configos-branding-exorint"
+
+YOCTOSDK="core-sdk-branding-exorint"
+
+# Build
+REPOBASEURL="git@exorint.unfuddle.com:exorint"
+
+BRANCH="exorint"  # default branch for REPOS if not specified (i.e. '-')
+# REPOS       | 1) name           | 2) URL                                         | 3) branch
+# Yocto repos                                                          (BRANCH if unspecified)
+REPOS=""
+REPOS="${REPOS} ${YOCTO}                    ${REPOBASEURL}/yocto-poky                       -"
+REPOS="${REPOS} meta-openembedded           ${REPOBASEURL}/yocto-meta-openembedded          -"
+REPOS="${REPOS} meta-freescale              ${REPOBASEURL}/yocto-meta-freescale             -"
+REPOS="${REPOS} meta-exorint                ${REPOBASEURL}/yocto-meta-exorint               -"
+REPOS="${REPOS} meta-exorint-enterprise     ${REPOBASEURL}/yocto-meta-exorint-enterprise    -"
+REPOS="${REPOS} meta-branding-exorint       ${REPOBASEURL}/yocto-meta-branding-exorint      -"
+# Other repos (e.g. utils)
+REPOS="${REPOS} usbupdater                  ${REPOBASEURL}/usbupdater                       master"
+export SRCDIR="$(pwd)/../"
+WORKDIR="$(pwd)/../../"
+BSPDIR="${SRCDIR}/bsp/"
+BUILDDIR="${WORKDIR}/build/"
+SHAREDDIR="${WORKDIR}/shared/"
+VERSIONBASE="un60-hsxx"
+
+# Yocto build exports
+export DISTRO="exorintos"
+export MACHINE="us01-hsxx"
+export SSTATE_DIR="${SHAREDDIR}/sstate-cache/"
+export DL_DIR="${SHAREDDIR}/downloads/"
+#export BBMASK=".*/meta-ti/recipes-misc/(images|payload)/"
+
+# Deploy
+DEPLOYTYPE="mnt"
+export DEPLOYFLAVOUR
+[ -z ${LBLBOOT} ] && LBLBOOT="BOOT"
+[ -z ${LBLROOT} ] && LBLROOT="ROOTFS"
+[ -z ${MNTDEV} ] && MNTDEV="/dev/sdb"
+[ -z ${MNTBOOT} ] && MNTBOOT="/media/${USER}/${LBLBOOT}"
+[ -z ${MNTROOT} ] && MNTROOT="/media/${USER}/${LBLROOT}"
+
+#
+# Internals
+#
+CONFDIR="${BUILDDIR}/conf/"
+CONFBBLAYERS="${CONFDIR}/bblayers.conf"
+VERSION="0.1"
+PROG="bsptool"
+#LOG="${PWD}/${PROG}.log"
+GOHOME=1
+UNTARGZ="tar --no-same-owner -xzvf"

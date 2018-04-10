@@ -1,0 +1,28 @@
+#!/bin/bash -xe
+#
+# Mount flash partitions
+
+# make it writable by users
+MOUNT_OPTS="-o umask=000"
+
+PROG="utils/$(basename $0)"
+[ -e "${PWD}/${PROG}" ] || die "${PROG} must be run from bsp directory!"
+
+# Device may vary according to the way MMC is accessed - change it here
+[ -z ${MNTDEV}} ] && MNTDEV="/dev/sdb"
+[ -z ${MNTBOOT}} ] && MNTBOOT="/media/boot"
+#[ -z ${MNTROOT}} ] && MNTROOT="/media/root"
+
+OVERRIDE="${PWD}/bsptool.local"
+[ -e "${OVERRIDE}" ] && source "${OVERRIDE}"
+
+BOOT="${MNTDEV}1"
+#ROOT="${MNTDEV}2"
+
+sudo mkdir -p "${MNTBOOT}"
+sudo mount ${MOUNT_OPTS} "${BOOT}" "${MNTBOOT}"
+
+#sudo mkdir -p "${MNTROOT}"
+#sudo mount "${ROOT}" "${MNTROOT}"
+
+exit 0

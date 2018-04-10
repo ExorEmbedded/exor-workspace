@@ -1,0 +1,11 @@
+--- qt-everywhere-opensource-src-4.8.7.orig/configure	2017-08-03 00:11:59.952151650 +0200
++++ qt-everywhere-opensource-src-4.8.7/configure	2017-08-03 00:12:23.636377327 +0200
+@@ -7756,7 +7756,7 @@
+     *-g++*)
+ 	# Check gcc's version
+ 	case "$(${QMAKE_CONF_COMPILER} -dumpversion)" in
+-	    5*|4*|3.4*)
++	    5*|4*|3.4*|6*)
+ 		;;
+             3.3*)
+                 canBuildWebKit="no"

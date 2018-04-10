@@ -1,0 +1,657 @@
+#!/bin/bash
+
+#
+# Environment Setup
+#
+PROG="$(basename $0)"
+CURRENTDIR="$(pwd)"
+
+[ -e ${PWD}/${PROG} ] || die "${PROG} must be run from bsp directory!"
+
+# Import common functions
+FUNCS="common/funcs"
+source "${FUNCS}"
+
+# Allow local overrides
+OVERRIDE="${PWD}/${PROG}.local"
+[ -e "${OVERRIDE}" ] && qwrap source "${OVERRIDE}"
+
+#
+# Definitions based on overrides
+#
+
+DEPLOYNAMEBASE="${DISTRO}"
+DEPLOYIMAGENAMEBASE="${DISTRO}"
+[ "${DEPLOYFLAVOUR}" != "" ] && DEPLOYIMAGENAMEBASE="${DEPLOYIMAGENAMEBASE}-${DEPLOYFLAVOUR}"
+DEPLOYNAMEBASE="${DEPLOYNAMEBASE}-${VERSIONBASE}"  # e.g. exorintos-un60-hsxx
+DEPLOYIMAGENAMEBASE="${DEPLOYIMAGENAMEBASE}-${VERSIONBASE}"  # e.g. exorintos-router-un60-hsxx
+
+usage()
+{
+    echo
+    echo "Usage: Exor $0 [-m <machine>] action                                      "
+    echo
+    echo "    -m <machine>        specify the machine to work with                  "
+    echo
+    echo "    Available actions are:                                                "
+    echo
+    echo "      help                    this help                                   "
+    echo
+    echo "      cmd     <command>       run a custom command on all repos           "
+    echo
+    echo "      setup                   run this one-time to set up build dependencies    "
+    echo
+    echo "      clone   <git_args>      download all repos (checking out BRANCH)    "
+    echo "      diff   [<git_args>]     view diffs in all repos                     "
+    echo "      fetch  [<git_args>]     fetch all repos                             "
+    echo "      pull   [<git_args>]     get updates from all repos                  "
+    echo "      push   [<git_args>]     push to all repos                           "
+    echo "                              looks up branch name in REPOS (bsptool.defaults)"
+    echo "      status [<git_args>]     get status of all repos                     "
+    echo
+    echo "      init                    initialise build environment                "
+    echo "                              use '. $0 init' to jump to build dir        "
+    echo "      bb      <bitbake_args>  run a bitbake command                       "
+    echo "                                                                          "
+    echo "      build   [mainos|        run build of single components (or all)     "
+    echo "               configos|      if unspecified)                             "
+    echo "               kernel|                                                    "
+    echo "               xloader|                                                   "
+    echo "               bootloader]                                                "
+    echo "               sdk]                                                       "
+    echo "      clean                   clean all build data and sstate             "
+    echo "                              (run this before *from-scratch* build)      "
+    echo "      cleanall                same as clean + also clean Download Dir     "
+    echo "                              (*only* to test download sources)           "
+    echo "                                                                          "
+    echo "      repo                    create or update rpm repo                   "
+    echo "                                                                          "
+    echo "      format                  format deploy media (optional MNTDEV,MNTBOOT,MNTROOT)"
+    echo "      mount                   mount deploy media (optional MNTDEV,MNTBOOT,MNTROOT)"
+    echo "      umount                  unmount deploy media (optional MNTBOOT, MNTROOT)"
+    echo "      bak    [<suffix>]       backup to local disk (optional suffix)      "
+    echo "                              and BAKDIR (default=${HOME}/bak/${MACHINE}${SUFFIX})"
+    echo "      deploy                  deploy onto install media                           "
+    echo "                              -> set MOUNTBOOT and MOUNTROOT accordingly          "
+    echo "      undeploy                clean target on install media                       "
+    echo "                                                                                  "
+    echo "      world                   clone repos, build images and SDK                   "
+    echo "                                                                                  "
+    echo "      backup                  backup packages for local yocto mirror              "
+    echo "                                                                                  "
+    echo "      licensing               dump files needed for license compliance            "
+    echo "                                                                                  "
+    echo "      history                 generate a table of changes from previous release   "
+    echo "      history_merge           merge history from all changes                      "
+    echo "                                                                                  "
+    echo "For more advanced repo operations use plain git.                                  "
+    echo "For more advanced build operations use plain bitbake.                             "
+    echo "Defaults can be overridden via ${OVERRIDE}.                                       "
+    echo "                                                                                  "
+}
+
+conf_gen()
+{
+    wrap cp "${BSPDIR}"/conf/*.conf "${CONFDIR}"
+}
+
+cmd_help()
+{
+    usage
+}
+
+cmd_foreach()
+{
+    PARAMS=$@
+
+    # execute on this repo
+    wrap ${PARAMS}
+
+    # execute on all other REPOS
+    # see bsptool.defaults for REPOS column definition
+    set ${REPOS}
+    while [ $# -ge 3 ]; do
+        REPO=$1
+        qwrap cd "${SRCDIR}/${REPO}"
+        wrap ${PARAMS}
+        shift; shift; shift
+    done
+}
+
+cmd_cmd()
+{
+    wrap cmd_foreach ${EXTRA}
+}
+
+cmd_setup()
+{
+    # Yocto dependencies
+    sudo apt-get install gawk wget git-core diffstat unzip texinfo \
+            gcc-multilib g++-multilib build-essential chrpath
+
+    # utils/ dependencies
+    sudo apt-get install nodejs npm
+    sudo ln -s  /usr/bin/nodejs /usr/bin/node
+    rm -rf node-modules
+    npm install execSync@1.0.2
+    npm install deepmerge@0.2.10
+    npm install node-getopt@0.2.3
+}
+
+cmd_clone()
+{
+    # see bsptool.defaults for REPOS column definition
+    set ${REPOS}
+    qwrap cd "${SRCDIR}"
+    while [ $# -ge 3 ]; do
+        REPO=$1
+        URL=$2
+        _BRANCH=$3
+        [ "${_BRANCH}" = "-" ] && _BRANCH="${BRANCH}"
+        msg "Grabbing ${REPO} from ${URL}"
+        if [ -e ${REPO} ]; then
+            msg "Repo ${REPO} already exists - plain checkout!"
+            qwrap cd "${REPO}"
+            wrap git checkout ${_BRANCH}
+            qwrap cd -
+        else
+            wrap git clone -b ${_BRANCH} ${URL} ${REPO} ${EXTRA}
+        fi
+        shift; shift; shift
+    done
+}
+
+cmd_diff()
+{
+    wrap cmd_foreach git diff ${EXTRA}
+}
+
+cmd_fetch()
+{
+    wrap cmd_foreach git fetch ${EXTRA}
+}
+
+cmd_pull()
+{
+    wrap cmd_foreach git pull ${EXTRA}
+}
+
+cmd_push()
+{
+    # execute on this repo
+    wrap git push origin ${BRANCH} ${EXTRA}
+
+    # see bsptool.defaults for REPOS column definition
+    set ${REPOS}
+    while [ $# -ge 3 ]; do
+        REPO=$1
+        URL=$2
+        _BRANCH=$3
+        [ "${_BRANCH}" = "-" ] && _BRANCH="${BRANCH}"
+        msg "Pushing ${REPO} to origin ${_BRANCH}"
+        qwrap cd "${SRCDIR}/${REPO}"
+        wrap git push origin ${_BRANCH} ${EXTRA}
+        shift; shift; shift
+    done
+}
+
+cmd_status()
+{
+    wrap cmd_foreach git status ${EXTRA}
+}
+
+cmd_init()
+{
+    GOHOME=0
+    msg "Initalizing Yocto environment in ${YOCTO}"
+    qwrap cd "${SRCDIR}/${YOCTO}"
+    qwrap source "${YOCTOENV}" "${BUILDDIR}"
+
+    export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE SSTATE_DIR"
+    export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE DL_DIR"
+    export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE SRCDIR"
+
+    # add EXOS variables to whitelist
+    export BB_ENV_EXTRAWHITE="$BB_ENV_EXTRAWHITE EXOS_VERSION_TAG"
+
+    conf_gen
+}
+
+cmd_bb()
+{
+    cmd_init
+    wrap bitbake ${EXTRA}
+}
+
+cmd_backup()
+{
+    cd $CURRENTDIR
+    echo
+    echo "Backup packages..."
+    mirrorDir="$HOME/yoctoMirror"
+
+    # Check if the downloads dir exist
+    [ ! -d $DL_DIR ] && echo "No DL_DIR found. Skipping..." && return
+
+    # Warn the user if the dir is not shared using samba 
+    [ ! -d "$mirrorDir" ] && echo "WARNING: no mirror directory found! Skipping backup step..." && return
+    [[ "$( df -t cifs $mirrorDir | awk '/Mirror/ {print}')" = "" ]] && echo "WARNING: it seems the mirror directory is not shared at the moment! Skipping backup step..." && return
+    
+    # Copy packages files to backup dir
+    cd $DL_DIR
+    for f in $( find . ! -path . ); do
+        [ -e "$mirrorDir/$f" ] && continue 
+        [ -d "$f" ] && mkdir -p $mirrorDir/$f && continue 
+        cp -f $f $mirrorDir/$f
+    done
+
+    # Delete all Exor related files
+    for exFile in $(find $mirrorDir -iname "exorint*" ); do 
+        rm -fr $exFile
+    done
+
+}
+
+cmd_licensing()
+{
+    cd $CURRENTDIR
+    deployDir="$CURRENTDIR/../../build/tmp/deploy"
+    deliveringDir="$HOME/oss/src/yocto"
+
+    # Check if necessary dirs exist
+    [ ! -d $deployDir/sources ] && echo "No sources dir found. Skipping..." && return 
+    [ ! -d $deployDir/licenses ] && echo "No licenses dir found. Skipping..." && return
+
+    echo
+    echo "Dumping files for license compliance..."
+
+    # Warn the user if the dir is not shared using samba 
+    [ ! -d "$HOME/oss/src" ] && mkdir -p $HOME/oss/src/
+    [[ "$( df -t cifs $HOME/oss | awk '/oss/ {print}')" = "" ]] && echo "WARNING: it seems the OSS directory is not shared at the moment!"
+
+    # Copy sources without *.diff.gz and *.dump files
+    mkdir -p  $deliveringDir
+    mkdir -p  $deliveringDir/Source_release
+    cd $deployDir/sources
+
+    for dir in $(ls | cat); do
+        echo $dir 
+        cd $dir;
+	for f in $( find . ! -path . ); do
+	    [ -e $deliveringDir/Source_release/$f ] && continue
+	    [ -d $f ] && mkdir -p $deliveringDir/Source_release/$f; 
+	    [[ ! "$f" = *".diff.gz" ]] && [[ ! "$f" = *".dump" ]] && cp -f $f $deliveringDir/Source_release/$f 2> /dev/null; 
+	done;
+	cd ..;
+    done;
+
+    # Remove empty dirs
+    cd $deliveringDir/Source_release;
+
+    while [ ! "$( find . -type d -empty )" = "" ]; do 
+        for d in $( find . -type d -empty ); do 
+	    rm -r $d
+	done
+    done
+   
+    # Remove proprietary sources
+    rm -rf Proprietary
+
+    # Copy licenses
+    cd $deployDir/licenses;
+    mkdir -p  $deliveringDir/Licensing/licenses;
+    mkdir -p  $deliveringDir/Licensing/manifests;
+
+    for f in $( find . ! -path . ); do
+	if [ -d $f ]; then
+	    [[ ! "$(ls $f | awk '/manifest/ {print}')" = "" ]] && mkdir -p $deliveringDir/Licensing/manifests/$f;
+	    [[ "$(ls $f | awk '/manifest/ {print}')" = "" ]] && mkdir -p $deliveringDir/Licensing/licenses/$f;
+	fi
+	[[ ! "$f" = *".manifest" ]] && cp -f $f $deliveringDir/Licensing/licenses/$f 2> /dev/null;
+	[[ "$f" = *"license.manifest" ]] && cp -f $f $deliveringDir/Licensing/manifests/$f 2> /dev/null;
+    done;
+
+    # Remove proprietary licenses
+    cd $deliveringDir/Licensing/licenses;
+    for lic in $(ls | cat); do
+        [ -f $lic/generic_Proprietary ] && rm -rf $lic
+    done
+
+    cd $CURRENTDIR
+
+    # Copy yocto scripts
+    mkdir -p ../poky $HOME/oss/src/yoctoScripts
+    cp -r ../poky/* $HOME/oss/src/yoctoScripts 2> /dev/null 
+    cp -r ../meta-branding-exorint $HOME/oss/src/yoctoScripts 2> /dev/null
+    cp -r ../meta-exorint $HOME/oss/src/yoctoScripts 2> /dev/null
+    cp -r ../meta-exorint-enterprise $HOME/oss/src/yoctoScripts 2> /dev/null
+    cp -r ../meta-openembedded $HOME/oss/src/yoctoScripts 2> /dev/null
+
+    # Remove .git directories 
+    for f in $(find $HOME/oss/src/yoctoScripts -iname ".git" ); do
+        rm -rf $f
+    done
+
+    # Extract JmuConfig sources
+    mkdir -p $HOME/yoctoScrs
+    cd $HOME/yoctoScrs
+    for jsrcs in $(find $deployDir/sources -iname "*jmuconfig*.tar.gz" ); do
+        echo $jsrcs
+        tar xf $jsrcs
+    done
+    
+   # Run JmuExtractor on JmuConfig sources for license collecting
+   cd $CURRENTDIR/utils
+   ./jmuExtractor.py -s $HOME/yoctoScrs -d $HOME/oss/src/jmuconfig
+
+}
+
+git_branch()
+{
+    git branch | grep '^\*' | sed 's/^\*\ //' | tr -d ' '
+}
+
+# git describe was showing tag with oldest date instead of latest for duplicates
+# (git describe --tags --abbrev=0)
+# $1    tagPrefix
+git_latest_tag()
+{
+    git tag -l $1* | sort -r --version-sort | head -1
+}
+
+# $1    branch
+set_branch_params()
+{
+    case "$1" in
+        exorint)
+            TAGPREFIX="rootfs-1.999."
+            UNSTABLEFLAG="-u"
+            ;;
+        exorint-1.x.x)
+            TAGPREFIX="rootfs-1.0."
+            UNSTABLEFLAG=""
+            ;;
+        *)
+            die "set_branch_params(): unknown branch: $1"
+            ;;
+    esac
+}
+
+# Grab history in the last N releases starting from the most recent one
+#
+# Assumptions: 
+#   - release has been just been tagged (for last release calculation)
+#     and no other tags have been fetched since
+cmd_history()
+{
+    set_branch_params "$(git_branch)"
+
+    local lastVersionTag="$(git_latest_tag ${TAGPREFIX})"
+    local lastVersion="$(echo ${lastVersionTag} | cut -d '-' -f 2)"
+
+    msg "Generating history for version ${lastVersion}"
+
+    wrap sudo node $CURRENTDIR/utils/jmuGenHistory gen -s "${lastVersion}" "${UNSTABLEFLAG}" -n 1
+}
+
+cmd_history_merge()
+{
+    set_branch_params "$(git_branch)"
+
+    wrap node $CURRENTDIR/utils/jmuGenHistory merge "${UNSTABLEFLAG}"
+}
+
+cmd_build()
+{
+    ARGS=""
+    ( echo ${MACHINE} | grep -q "us01\-" ) && ARGS="${ARGS} xloader"
+    if (echo ${MACHINE} | grep -q "us03\-" ); then
+        ARGS="${ARGS} bootloader-imx6d"
+	( echo ${MACHINE} | grep -q "\-hsxx\|-jsxx" ) && ARGS="${ARGS} bootloader-imx6q"
+    else
+        ARGS="${ARGS} bootloader"
+    fi
+    ARGS="${ARGS} virtual/kernel"
+    ARGS="${ARGS} ${YOCTOIMAGESM}"
+    ARGS="${ARGS} ${YOCTOIMAGESC}"
+    BUILDSDK="1"
+
+    if [ "${EXTRA}" != "" ]; then
+        ARGS=""
+        BUILDSDK="0"
+    fi
+
+    for x in ${EXTRA}; do
+        case ${x} in
+            xloader)
+                ( echo ${MACHINE} | grep -q "us01\-") && ARGS="${ARGS} xloader" ;;
+            bootloader)
+                if (echo ${MACHINE} | grep -q "us03\-" ); then
+                    ARGS="${ARGS} bootloader-imx6d"
+                    ( echo ${MACHINE} | grep -q "\-hsxx" ) && ARGS="${ARGS} bootloader-imx6q"
+                else
+                    ARGS="${ARGS} bootloader"
+                fi ;;
+            kernel)
+                ARGS="${ARGS} virtual/kernel" ;;
+            mainos)
+                ARGS="${ARGS} ${YOCTOIMAGESM}" ;;
+            configos)
+                ARGS="${ARGS} ${YOCTOIMAGESC}" ;;
+            sdk)
+                BUILDSDK="1" ;;
+            *)
+                die "Unknown argument: ${x}!"
+        esac
+    done
+
+    cmd_init
+
+    if [ "${ARGS}" != "" ]; then
+        wrap bitbake "${ARGS}"
+    fi
+
+    # make sure SDK is built last - avoids errors due to paths not found
+    if [ "${BUILDSDK}" = "1" ]; then
+        wrap bitbake "${YOCTOSDK}"
+    fi
+
+    cmd_backup
+}
+
+cmd_clean()
+{
+    wrap rm -rf "${BUILDDIR}" "${SSTATE_DIR}"
+}
+
+cmd_cleanall()
+{
+    wrap cmd_clean
+    wrap rm -rf "${DL_DIR}"
+}
+
+cmd_repo()
+{
+    which createrepo || wrap sudo apt-get install createrepo
+
+    qwrap cd "${BUILDDIR}/tmp/deploy/rpm"
+    wrap createrepo --update .
+}
+
+cmd_format()
+{
+    yesno "Formatting ${MNTDEV} partitions - Are you *sure* you want to continue? [y|n]"
+    [ $? -ne 0 ] && return 0
+
+    wrap mkfs.vfat -F 32 -n "${LBLBOOT}" "${MNTDEV}1"
+    wrap mkfs.ext3 -j -L "${LBLROOT}" "${MNTDEV}2"
+}
+
+cmd_deploy_mnt()
+{
+    [ -z ${IMAGESDIR} ] && IMAGESDIR="${BUILDDIR}/tmp/deploy/images/${MACHINE}"
+    USBUPDATERDIR="${SRCDIR}/usbupdater"
+    MAINOS="${DEPLOYIMAGENAMEBASE}-mainos.tar.gz"
+    CONFIGOS="${DEPLOYIMAGENAMEBASE}-configos.tar.gz"
+    KERNEL="${DEPLOYNAMEBASE}-kernel.tar.gz"
+    XLOADER="${DEPLOYNAMEBASE}-xloader.tar.gz"
+    BOOTLOADER="${DEPLOYNAMEBASE}-bootloader.tar.gz"
+    DATA="data.tar.gz"
+    FACTORY="factory.tar.gz"
+    MOUNTBOOT=$1
+    MOUNTBOOTSRC="${MOUNTBOOT}/src"
+
+    msg "IMAGESDIR: ${IMAGESDIR}"
+    msg "MAINOS: ${MAINOS}"
+    msg "CONFIGOS: ${CONFIGOS}"
+    msg "KERNEL: ${KERNEL}"
+    msg "XLOADER: ${XLOADER}"
+    msg "BOOTLOADER: ${BOOTLOADER}"
+    msg "DATA: ${DATA}"
+    msg "FACTORY: ${FACTORY}"
+    msg "MOUNTBOOT: ${MOUNTBOOT}"
+
+    [ ! -d ${MOUNTBOOT} ] && die "bad mount point: ${MOUNTBOOT}"
+    [ ! -d ${IMAGESDIR} ] && die "bad images dir: ${IMAGESDIR}"
+
+    qwrap rsync -r --exclude=.git/ "${USBUPDATERDIR}/" "${MOUNTBOOT}/"
+    qwrap rsync -L "${IMAGESDIR}/${MAINOS}" "${MOUNTBOOTSRC}/mainos.tar.gz"
+    qwrap rsync -L "${IMAGESDIR}/${CONFIGOS}" "${MOUNTBOOTSRC}/configos.tar.gz"
+
+    # assume we use the same configos also for updateos
+    qwrap rsync -L "${IMAGESDIR}/${CONFIGOS}" "${MOUNTBOOTSRC}/updateos.tar.gz"
+
+    #  xloader and bootloader to boot partition
+    qwrap ${UNTARGZ}                    \
+        "${IMAGESDIR}/${XLOADER}"       \
+        -C "${MOUNTBOOTSRC}/"
+    qwrap mv "${MOUNTBOOTSRC}/MLO" "${MOUNTBOOTSRC}/MLO.raw"
+    qwrap ${UNTARGZ}                    \
+        "${IMAGESDIR}/${BOOTLOADER}"    \
+        -C "${MOUNTBOOTSRC}/"
+
+    if [ -e "${IMAGESDIR}/${DATA}" ]; then
+        qwrap rsync -L "${IMAGESDIR}/${DATA}" "${MOUNTBOOTSRC}/${DATA}"
+    else
+        msg "*WARNING*: DATA package NOT found - ignoring..."
+    fi
+    if [ -e "${IMAGESDIR}/${FACTORY}" ]; then
+        qwrap rsync -L "${IMAGESDIR}/${FACTORY}" "${MOUNTBOOTSRC}/${FACTORY}" 
+    else
+        msg "*WARNING*: FACTORY image NOT found - ignoring..."
+    fi
+
+    msg "Generating MD5 checksums"
+    qwrap pushd "${MOUNTBOOTSRC}"
+    md5sum mainos.tar.gz > mainos.tar.gz.md5
+    md5sum configos.tar.gz > configos.tar.gz.md5
+    md5sum MLO.raw > MLO.raw.md5
+    md5sum u-boot.img > u-boot.img.md5
+    qwrap popd
+
+    if [ -e "${MOUNTBOOTSRC}/updateos.img" ]; then
+        msg "UpdateOS image found - not recreating"
+    else
+        msg "Running createimage.sh"
+        pushd "${MOUNTBOOTSRC}" >/dev/null
+        qwrap sudo /bin/bash ../createimage.sh
+        popd
+    fi
+
+    # always do full reformat
+    wrap touch ${MOUNTBOOTSRC}/reformat
+
+    wrap sync
+}
+
+cmd_mount()
+{
+    wrap ./utils/mountx
+}
+
+cmd_umount()
+{
+    wrap ./utils/umountx
+}
+
+cmd_bak()
+{
+    wrap ./utils/bak ${EXTRA}
+}
+
+cmd_deploy()
+{
+    case "${DEPLOYTYPE}" in
+        mnt)
+            cmd_deploy_mnt "${MNTBOOT}" "${MNTROOT}"
+            ;;
+        *)
+            usage && return 1
+            ;;
+    esac
+}
+
+cmd_undeploy()
+{
+    case "${DEPLOYTYPE}" in
+        mnt)
+            wrap sudo rm -rf "${MNTBOOT}/*" "${MNTROOT}/*"
+            wrap sync
+            ;;
+        *)
+            usage && return 1
+            ;;
+    esac
+}
+
+cmd_world()
+{
+    wrap cmd_clone
+    wrap cmd_build
+}
+
+cleanup()
+{
+    [ "${GOHOME}" = "1" ] && [ ${OLDPWD} ] && cd - >/dev/null
+}
+
+main ()
+{
+    trap cleanup 0 1 2 3 4 6 7 8 9 11 13 15
+
+    if [ $# -gt 1 -a "$1" == "-m" ]; then
+        export MACHINE=$2
+        shift
+        shift
+    fi
+
+    CMD=$1
+    [ -z $CMD ] && usage && return 1
+
+    shift
+    EXTRA=$@
+
+    #rm -f "${LOG}"
+
+    msg
+    msg "bsptool v${VERSION}"
+    msg
+    msg "Work Dir:          ${WORKDIR}"
+    msg "Src Dir:           ${SRCDIR}"
+    msg "Build Dir:         ${BUILDDIR}"
+    msg "SState Dir:        ${SSTATE_DIR}"
+    msg "Download Dir:      ${DL_DIR}"
+    msg "Branch:            ${BRANCH}"
+    msg "MainOS Images:     ${YOCTOIMAGESM}"
+    msg "ConfigOS Images:   ${YOCTOIMAGESC}"
+    msg "Machine:           ${MACHINE}"
+    msg "Command:           ${CMD}"
+    msg 
+
+    wrap cmd_"${CMD}"
+    [ $? -eq 127 ] && usage && return 1 
+}
+
+main $@
+
+exit 0

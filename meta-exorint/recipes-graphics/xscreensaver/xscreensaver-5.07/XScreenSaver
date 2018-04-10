@@ -1,0 +1,5 @@
+timeout: 0:00:00
+mode: off
+fade: False
+unfade: False
+programs: /usr/bin/xset dpms force off

@@ -1,0 +1,201 @@
+diff --git a/chrome/browser/devtools/global_confirm_info_bar_browsertest.cc b/chrome/browser/devtools/global_confirm_info_bar_browsertest.cc
+index b334f62..3860fef 100644
+--- a/chrome/browser/devtools/global_confirm_info_bar_browsertest.cc
++++ b/chrome/browser/devtools/global_confirm_info_bar_browsertest.cc
+@@ -15,6 +15,7 @@
+ #include "chrome/browser/ui/tabs/tab_strip_model.h"
+ #include "chrome/test/base/in_process_browser_test.h"
+ #include "components/infobars/core/infobar.h"
++#include "components/infobars/core/infobars_switches.h"
+ #include "content/public/test/test_utils.h"
+ 
+ namespace {
+@@ -54,6 +55,22 @@
+   DISALLOW_COPY_AND_ASSIGN(GlobalConfirmInfoBarTest);
+ };
+ 
++// Subclass for tests that require infobars to be disabled.
++class GlobalConfirmInfoBarWithInfoBarDisabledTest
++    : public GlobalConfirmInfoBarTest {
++ public:
++  GlobalConfirmInfoBarWithInfoBarDisabledTest() = default;
++  ~GlobalConfirmInfoBarWithInfoBarDisabledTest() override = default;
++
++ protected:
++  void SetUpCommandLine(base::CommandLine* command_line) override {
++    command_line->AppendSwitch(infobars::switches::kDisableInfoBars);
++  }
++
++ private:
++  DISALLOW_COPY_AND_ASSIGN(GlobalConfirmInfoBarWithInfoBarDisabledTest);
++};
++
+ }  // namespace
+ 
+ // Creates a global confirm info bar on a browser with 2 tabs and closes it.
+@@ -129,3 +146,17 @@
+   for (int i = 0; i < tab_strip_model->count(); i++)
+     EXPECT_EQ(0u, GetInfoBarServiceFromTabIndex(i)->infobar_count());
+ }
++
++IN_PROC_BROWSER_TEST_F(GlobalConfirmInfoBarWithInfoBarDisabledTest,
++                       InfoBarsDisabled) {
++  ASSERT_EQ(1, browser()->tab_strip_model()->count());
++
++  auto delegate = std::make_unique<TestConfirmInfoBarDelegate>();
++  base::WeakPtr<GlobalConfirmInfoBar> global_confirm_info_bar =
++      GlobalConfirmInfoBar::Show(std::move(delegate));
++
++  // In this case, the deletion is done asynchronously.
++  content::RunAllPendingInMessageLoop();
++
++  ASSERT_FALSE(global_confirm_info_bar);
++}
+diff --git a/components/infobars/core/BUILD.gn b/components/infobars/core/BUILD.gn
+index acb9374..103e359 100644
+--- a/components/infobars/core/BUILD.gn
++++ b/components/infobars/core/BUILD.gn
+@@ -21,6 +21,8 @@
+     "infobar_delegate.h",
+     "infobar_manager.cc",
+     "infobar_manager.h",
++    "infobars_switches.cc",
++    "infobars_switches.h",
+     "simple_alert_infobar_delegate.cc",
+     "simple_alert_infobar_delegate.h",
+   ]
+diff --git a/components/infobars/core/infobar_manager.cc b/components/infobars/core/infobar_manager.cc
+index 7005855..7f6a4c9 100644
+--- a/components/infobars/core/infobar_manager.cc
++++ b/components/infobars/core/infobar_manager.cc
+@@ -8,6 +8,7 @@
+ 
+ #include "base/command_line.h"
+ #include "components/infobars/core/infobar.h"
++#include "components/infobars/core/infobars_switches.h"
+ 
+ namespace infobars {
+ 
+@@ -37,6 +38,9 @@
+ InfoBar* InfoBarManager::AddInfoBar(std::unique_ptr<InfoBar> infobar,
+                                     bool replace_existing) {
+   DCHECK(infobar);
++  if (!infobars_enabled_)
++    return nullptr;
++
+   for (InfoBars::const_iterator i(infobars_.begin()); i != infobars_.end();
+        ++i) {
+     if ((*i)->delegate()->EqualsDelegate(infobar->delegate())) {
+@@ -67,6 +71,8 @@
+ InfoBar* InfoBarManager::ReplaceInfoBar(InfoBar* old_infobar,
+                                         std::unique_ptr<InfoBar> new_infobar) {
+   DCHECK(old_infobar);
++  if (!infobars_enabled_)
++    return AddInfoBar(std::move(new_infobar));  // Deletes the infobar.
+   DCHECK(new_infobar);
+ 
+   InfoBars::iterator i(std::find(infobars_.begin(), infobars_.end(),
+@@ -97,6 +103,9 @@
+ }
+ 
+ InfoBarManager::InfoBarManager() {
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++          switches::kDisableInfoBars))
++    infobars_enabled_ = false;
+ }
+ 
+ InfoBarManager::~InfoBarManager() {}
+@@ -133,6 +142,11 @@
+ 
+ void InfoBarManager::RemoveInfoBarInternal(InfoBar* infobar, bool animate) {
+   DCHECK(infobar);
++  if (!infobars_enabled_) {
++    DCHECK(infobars_.empty());
++    return;
++  }
++
+   InfoBars::iterator i(std::find(infobars_.begin(), infobars_.end(), infobar));
+   DCHECK(i != infobars_.end());
+ 
+diff --git a/components/infobars/core/infobar_manager.h b/components/infobars/core/infobar_manager.h
+index 9ae6c06..2d44965 100644
+--- a/components/infobars/core/infobar_manager.h
++++ b/components/infobars/core/infobar_manager.h
+@@ -132,6 +132,7 @@
+   void RemoveInfoBarInternal(InfoBar* infobar, bool animate);
+ 
+   InfoBars infobars_;
++  bool infobars_enabled_ = true;
+   bool animations_enabled_ = true;
+ 
+   base::ObserverList<Observer, true> observer_list_;
+diff --git a/components/infobars/core/infobars_switches.cc b/components/infobars/core/infobars_switches.cc
+new file mode 100644
+index 0000000..deb21a7
+--- /dev/null
++++ b/components/infobars/core/infobars_switches.cc
+@@ -0,0 +1,14 @@
++// Copyright 2014 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "components/infobars/core/infobars_switches.h"
++
++namespace infobars {
++namespace switches {
++
++// Prevent infobars from appearing.
++const char kDisableInfoBars[] = "disable-infobars";
++
++}  // namespace switches
++}  // namespace infobars
+diff --git a/components/infobars/core/infobars_switches.h b/components/infobars/core/infobars_switches.h
+new file mode 100644
+index 0000000..d24a09a
+--- /dev/null
++++ b/components/infobars/core/infobars_switches.h
+@@ -0,0 +1,16 @@
++// Copyright 2014 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef COMPONENTS_INFOBARS_CORE_INFOBARS_SWITCHES_H_
++#define COMPONENTS_INFOBARS_CORE_INFOBARS_SWITCHES_H_
++
++namespace infobars {
++namespace switches {
++
++extern const char kDisableInfoBars[];
++
++}  // namespace switches
++}  // namespace infobars
++
++#endif  // COMPONENTS_INFOBARS_CORE_INFOBARS_SWITCHES_H_
+diff --git a/tools/android/loading/device_setup.py b/tools/android/loading/device_setup.py
+index 16abfa6..cfa19bf 100644
+--- a/tools/android/loading/device_setup.py
++++ b/tools/android/loading/device_setup.py
+@@ -360,6 +360,11 @@
+ def RemoteSpeedIndexRecorder(device, connection, local_output_path):
+   """Records on a device a video compatible for speed-index computation.
+ 
++  Note:
++    Chrome should be opened with the --disable-infobars command line argument to
++    avoid web page viewport size to be changed, that can change speed-index
++    value.
++
+   Args:
+     device: (device_utils.DeviceUtils) Android device to connect to.
+     connection: devtools connection.
+diff --git a/tools/android/loading/sandwich_runner.py b/tools/android/loading/sandwich_runner.py
+index cb2a80d..5c3bb94 100644
+--- a/tools/android/loading/sandwich_runner.py
++++ b/tools/android/loading/sandwich_runner.py
+@@ -331,6 +331,7 @@
+       self._chrome_ctl = controller.RemoteChromeController(self.android_device)
+     else:
+       self._chrome_ctl = controller.LocalChromeController()
++    self._chrome_ctl.AddChromeArguments(['--disable-infobars'])
+     self._chrome_ctl.AddChromeArguments(self.chrome_args)
+     if self.cache_operation == CacheOperation.SAVE:
+       self._chrome_ctl.SetSlowDeath()

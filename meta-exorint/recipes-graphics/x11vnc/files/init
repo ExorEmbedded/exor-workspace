@@ -1,0 +1,79 @@
+#!/bin/sh
+
+# /etc/init.d/x11vnc: start and stop the VNC service
+#
+# *NOT A REAL INIT SCRIPT* - controlled by JMUConfig
+
+NAME="x11vnc"
+DAEMON="/usr/bin/${NAME}"
+CONF="/etc/x11vnc/x11vnc.conf"
+LOG="/var/log/x11vnc.log"
+
+X11VNC_START_PARAM="services/x11vnc/autostart"
+X11VNC_SWFLAG_OFFSET=6
+
+if test -f /etc/default/${NAME}; then
+    . /etc/default/${NAME}
+fi
+X11VNC_OPTS="-noxinerama -rc ${CONF} -o ${LOG} ${X11VNC_OPTS}"
+
+die()
+{
+    echo $@
+    exit 1
+}
+
+do_start()
+{
+    echo "Starting ${NAME} with opts: $X11VNC_OPTS"
+
+    start-stop-daemon -S -x "${DAEMON}" -- $X11VNC_OPTS 2>&1 | logger
+    [ $? -ne 0 ] && die "Failed starting daemon"
+
+    echo "."
+}
+
+do_stop()
+{
+    echo "Stopping ${NAME}"
+
+    start-stop-daemon -K -x "${DAEMON}"
+    [ $? -ne 0 ] && echo "Failed stopping daemon"
+
+    echo "."
+}
+
+case "$1" in
+
+  start)
+
+    # X11VNC is enabled at boot by system parameter or by SWFlagArea bit
+    if [ "$( cat /proc/$PPID/comm )" = "rc" ]; then
+      . /etc/exorint.funcs
+
+      autostart=$( sys_params $X11VNC_START_PARAM )
+      ( [ $? -eq 0 -a "$autostart" = "true" ] || [ $( exorint_swflagarea_bit $X11VNC_SWFLAG_OFFSET ) -eq 1 ] ) || exit
+    fi
+
+    do_start
+    ;;
+
+  stop)
+    do_stop
+    ;;
+
+  restart)
+
+    do_stop
+    sleep 2
+    do_start
+
+    echo "."
+    ;;
+
+  *)
+    echo "Usage: /etc/init.d/${NAME} {start|stop|restart}"
+    exit 1
+esac
+
+exit 0

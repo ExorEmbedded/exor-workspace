@@ -1,0 +1,15 @@
+--- fontconfig-2.10.2/fonts.conf.in	2012-07-24 04:01:32.000000000 +0200
++++ fontconfig-2.10.2b/fonts.conf.in	2016-11-25 15:41:02.195313662 +0100
+@@ -145,10 +145,10 @@
+ 			<int>0xFFFB</int>	<!-- INTERLINEAR ANNOTATION TERMINATOR -->
+ 		</blank>
+ <!--
+-  Rescan configuration every 30 seconds when FcFontSetList is called
++  Disable configuration rescan
+  -->
+ 		<rescan>
+-			<int>30</int>
++			<int>0</int>
+ 		</rescan>
+ 	</config>
+ 

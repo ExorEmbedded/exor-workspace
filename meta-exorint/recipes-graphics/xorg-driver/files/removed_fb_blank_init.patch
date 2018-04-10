@@ -1,0 +1,20 @@
+diff --git a/src/fbdev.c b/src/fbdev.c
+index f5a7378..a99d2c4 100644
+--- a/src/fbdev.c
++++ b/src/fbdev.c
+@@ -681,6 +681,7 @@ FBDevScreenInit(SCREEN_INIT_ARGS_DECL)
+ 
+ 	fbdevHWSave(pScrn);
+ 
++#ifdef EXOR_REINIT_DISPLAY
+ 	if (!fbdevHWModeInit(pScrn, pScrn->currentMode)) {
+ 		xf86DrvMsg(pScrn->scrnIndex,X_ERROR,"mode initialization failed\n");
+ 		return FALSE;
+@@ -690,6 +691,7 @@ FBDevScreenInit(SCREEN_INIT_ARGS_DECL)
+ 
+ 	/* mi layer */
+ 	miClearVisualTypes();
++#endif
+ 	if (pScrn->bitsPerPixel > 8) {
+ 		if (!miSetVisualTypes(pScrn->depth, TrueColorMask, pScrn->rgbBits, TrueColor)) {
+ 			xf86DrvMsg(pScrn->scrnIndex,X_ERROR,"visual type setup failed"

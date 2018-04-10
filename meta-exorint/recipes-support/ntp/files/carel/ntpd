@@ -1,0 +1,94 @@
+#! /bin/sh
+
+# Don't run in rc to avoid slowing down startup process (ntpsync can take
+# up to 10 seconds) this script is already launched in background by
+# /etc/network/if-up.d
+CALLER=`cat /proc/$PPID/status | grep ^Name: | awk '{print $2}'`
+[ "$CALLER" = "rc" ] && exit 0
+EXEC="/usr/sbin/ntpd"
+PIDFILE="/var/run/ntp.pid"
+TICKADJEXEC="/usr/sbin/tickadj"
+
+#
+# ntpd	init.d script for ntpdc from ntp.isc.org
+test -x $EXEC -a -r /etc/ntp.conf || exit 0
+# rcS contains TICKADJ
+test -r /etc/default/rcS && . /etc/default/rcS
+
+# Functions to do individual actions
+settick(){
+  	# If TICKADJ is set we *must* adjust it before we start, because the
+	# driftfile relies on the correct setting
+	test -n "$TICKADJ" -a -x $TICKADJEXEC && {
+		echo -n "Setting tick to $TICKADJ: "
+		$TICKADJEXEC "$TICKADJ"
+		echo "done"
+	}
+}
+# Generate JMUConfig's default NTP configuration.
+# We must do it here because JMUConfig is started later in the boot process
+genconf(){
+	NTPGEN="/usr/bin/jmuconfig-gen-ntp-conf.sh"
+	grep -q "JMUConfig" /etc/ntp.conf || "${NTPGEN}" > /etc/ntp.conf
+}
+ntpsync(){
+	SERVER=`grep ^server /etc/ntp.conf | head -n 1 | awk '{print $2}'`
+	# if server is not reachable, don't bother starting NTP to avoid drift problems (#8951)
+	# (it will start again upon /etc/network/if-up.d)
+	ntpdate -u -b "${SERVER}" && hwclock -u -w
+	[ $? -eq 0 ] || exit 1
+}
+startdaemon(){
+	genconf
+	## The -g option allows ntpd to step the time to correct it just
+	## once.  The daemon will exit if the clock drifts too much after
+	## this.  If ntpd seems to disappear after a while assume TICKADJ
+	## above is set to a totally incorrect value.
+    # => we now use ntpdate instead of -g
+	ntpsync
+	echo -n "Starting ntpd: "
+	start-stop-daemon --start -x $EXEC -- -p $PIDFILE "$@"
+	echo "done"
+}
+stopdaemon(){
+	echo -n "Stopping ntpd: "
+	start-stop-daemon --stop -p $PIDFILE
+	rm -f $PIDFILE
+	echo "done"
+}
+
+case "$1" in
+  start)
+
+        # If time synchronization mode is not set to NTP exit
+        if [ -e /etc/time.conf ]; then
+                SYNC_MODE=`cat /etc/time.conf | grep ^mode | awk '{print $2}'`
+                [ ! "$SYNC_MODE" == "NTP" ] && exit 0
+        fi
+
+  	settick
+	startdaemon
+	;;
+  stop)
+  	stopdaemon
+	;;
+  force-sync)
+	[ -e "$PIDFILE" ] && ntpsync
+	;;
+  force-reload)
+  	stopdaemon
+  	settick
+	startdaemon
+	;;
+  restart|reload)
+  	# Don't reset the tick here
+	stopdaemon
+	startdaemon
+	;;
+  *)
+	echo "Usage: ntpd { start | stop | restart | reload }" >&2
+	exit 1
+	;;
+esac
+
+exit 0

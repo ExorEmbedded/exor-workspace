@@ -1,0 +1,33 @@
+--- chromium-65.0.3325.162.2/chrome/browser/ui/libgtkui/gtk_util.cc	2018-03-27 15:34:16.374189718 +0200
++++ chromium-65.0.3325.162/chrome/browser/ui/libgtkui/gtk_util.cc	2018-03-27 22:38:40.741536619 +0200
+@@ -56,14 +56,6 @@
+   }
+ }
+ 
+-using GtkSetState = void (*)(GtkWidgetPath*, gint, GtkStateFlags);
+-PROTECTED_MEMORY_SECTION base::ProtectedMemory<GtkSetState>
+-    _gtk_widget_path_iter_set_state;
+-
+-using GtkSetObjectName = void (*)(GtkWidgetPath*, gint, const char*);
+-PROTECTED_MEMORY_SECTION base::ProtectedMemory<GtkSetObjectName>
+-    _gtk_widget_path_iter_set_object_name;
+-
+ }  // namespace
+ 
+ namespace libgtkui {
+@@ -245,6 +237,15 @@
+   return linux_ui ? linux_ui->GetDeviceScaleFactor() : 1;
+ }
+ 
++meta-exorint/recipes-connectivity/samba/samba_4.6.7.bba
++using GtkSetState = void (*)(GtkWidgetPath*, gint, GtkStateFlags);
++PROTECTED_MEMORY_SECTION base::ProtectedMemory<GtkSetState>
++    _gtk_widget_path_iter_set_state;
++
++using GtkSetObjectName = void (*)(GtkWidgetPath*, gint, const char*);
++PROTECTED_MEMORY_SECTION base::ProtectedMemory<GtkSetObjectName>
++    _gtk_widget_path_iter_set_object_name;
++
+ }  // namespace
+ 
+ void* GetGdkSharedLibrary() {

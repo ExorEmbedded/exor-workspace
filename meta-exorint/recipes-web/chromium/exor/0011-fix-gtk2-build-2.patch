@@ -1,0 +1,17 @@
+--- chromium-64.0.3282.140-2/ui/accessibility/platform/atk_util_auralinux_gtk2.cc	2018-02-10 17:34:33.586575648 +0100
++++ chromium-64.0.3282.140/ui/accessibility/platform/atk_util_auralinux_gtk2.cc	2018-02-10 17:35:40.691318444 +0100
+@@ -56,6 +56,8 @@
+   init_func();
+ }
+ 
++namespace ui {
++
+ bool AtkUtilAuraLinux::PlatformShouldEnableAccessibility() {
+   std::unique_ptr<base::Environment> env(base::Environment::Create());
+   std::string gtk_modules;
+@@ -78,3 +80,5 @@
+       base::Bind(&GetAccessibilityModuleInitFunc),
+       base::Bind(&FinishAccessibilityInitOnMainThread));
+ }
++
++}

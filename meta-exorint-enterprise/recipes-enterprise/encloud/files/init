@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# Exorint wrapper for encloud-real
+
+PPCMD="`cat /proc/$PPID/comm`"
+
+case "$1" in
+
+   start)
+        # Do nothing if called by init and cloud service is controlled externally
+        if [ "${PPCMD}" = "rc" ]; then
+            dbus-send --print-reply=literal --system --dest=com.exor.EPAD "/ServiceManager" \
+                    com.exor.EPAD.ServiceManager.controlled string:"cloud" | grep -q "boolean true" && exit 0
+        fi
+        ;;
+   *)
+        ;;
+esac
+
+exec /etc/init.d/encloud-real "$1"

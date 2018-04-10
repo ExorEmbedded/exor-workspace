@@ -1,0 +1,38 @@
+--- a/scripts/xinput_calibrator_pointercal.sh	2017-01-12 23:59:04.000000000 +0000
++++ b/scripts/xinput_calibrator_pointercal.sh	2017-05-24 16:14:48.579372117 +0000
+@@ -8,6 +8,8 @@
+ # updated by Tias Guns <tias@ulyssis.org>, 2010-02-15
+ # updated by Koen Kooi <koen@dominion.thruhere.net>, 2012-02-28
+ 
++[ ! -d /tmp/.X11-unix ] && exit 1
++
+ PATH="/usr/bin:$PATH"
+ 
+ BINARY="xinput_calibrator"
+@@ -17,6 +19,8 @@
+ CALFILE="$CALDIR/pointercal.xinput"
+ LOGFILE="/var/log/xinput_calibrator.pointercal.log"
+ 
++[ -z "$DISPLAY" ] && export DISPLAY=:0
++
+ if [ -e $CALLINK ] ; then
+   if grep replace $CALLINK ; then
+     echo "Empty calibration file found, removing it"
+@@ -24,9 +28,17 @@
+   else
+     echo "Using calibration data stored in $CALLINK"
+     . $CALLINK && exit 0
++    if [ "$1" = "--restore" ]; then
++      for i in 1 2 3 4 5; do
++        sleep 1
++        . $CALLINK && exit 0
++      done 
++    fi
+   fi
+ fi
+ 
++[ "$1" = "--restore" ] && exit 0
++
+ CALDATA=`$BINARY --output-type xinput -v | tee $LOGFILE | grep '    xinput set' | sed 's/^    //g; s/$/;/g'`
+ if [ ! -z "$CALDATA" ] ; then
+   mount -o remount,rw $FACTORYMNT

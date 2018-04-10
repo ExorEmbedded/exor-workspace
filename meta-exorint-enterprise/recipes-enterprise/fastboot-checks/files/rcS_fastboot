@@ -1,0 +1,314 @@
+#!/bin/sh
+#
+# rcS		Call all S??* scripts in /etc/rcS.d in
+#		numerical/alphabetical order.
+#
+# Version:	@(#)/etc/init.d/rcS  2.76  19-Apr-1999  miquels@cistron.nl
+#
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+runlevel=S
+prevlevel=N
+umask 022
+export PATH runlevel prevlevel
+
+ROOTTMPMNT=/mnt/tmpRoot
+DATAPARTITION=/dev/mmcblk1p6
+DATATMPMNT=/mnt/data/
+ETCTMPMNT=/mnt/etcfs/
+ETCPARTITION=/dev/mmcblk1p5
+FACTORYPARTITION=/dev/mmcblk1p1
+FACTORYTMPMNT=/mnt/factory/
+CMDFILE=$DATATMPMNT/updateCmd
+
+# Source defaults.
+[ -e /etc/default/rcS ]   && . /etc/default/rcS
+[ -e /etc/default/gpio ]  && . /etc/default/gpio
+[ -e /etc/exorint.funcs ] && . /etc/exorint.funcs
+
+# Trap CTRL-C &c only in this shell so we can interrupt subprocesses.
+trap ":" INT QUIT TSTP
+
+# Start splash
+export TMPDIR=/mnt/.psplash
+
+[ "$ENABLE_ROOTFS_FSCK" = "yes" ] && exorint_extfsck $ETCPARTITION
+
+# Mount system fs
+mount -t tmpfs -o rw,size=1M tmpfs /mnt
+# Mount factory partition to get the splash image (if mount fails, perform format+mount)
+mkdir $FACTORYTMPMNT
+mount -t ext4 -o ro $FACTORYPARTITION $FACTORYTMPMNT
+mount -t ext4 $ETCPARTITION /etc
+mkdir $TMPDIR
+mount -t tmpfs -o rw,size=40k /tmpfs $TMPDIR
+mkdir $DATATMPMNT
+mount -t ext4 -o usrquota,grpquota,ro $DATAPARTITION $DATATMPMNT
+if [ $? -ne 0 ]; then
+   exorint_extfsck $DATAPARTITION
+   mount -t ext4 -o usrquota,grpquota $DATAPARTITION $DATATMPMNT
+   if [ $? -ne 0 ]; then
+      mke2fs -T ext4 -L "data" $DATAPARTITION
+      mount -t ext4 -o usrquota,grpquota $DATAPARTITION $DATATMPMNT
+   fi
+fi
+
+# Move /home to data partition
+if [ ! -d "$DATATMPMNT/home" ]; then
+	mount -o remount,rw $DATATMPMNT
+	cp -rp /home $DATATMPMNT
+fi
+mount -o bind $DATATMPMNT/home /home
+
+#Clear settings just performed
+if [ ! -d '/etc/init.d' ]; then
+    # The partition does not contain a valid etc folder
+    umount -l /etc
+    mke2fs -T ext4 -L "etc" $ETCPARTITION
+    mkdir $ETCTMPMNT
+    mount -t ext4 $ETCPARTITION $ETCTMPMNT
+    cp -a /etc/. $ETCTMPMNT
+    sync
+    mount --move $ETCTMPMNT /etc
+    rm -rf $ETCTMPMNT
+fi
+
+# Get etc and bsp versions
+etcVers="$( cat /etc/migrations/version )"
+bspVers="$( cat /boot/version )"
+
+# If versions do not match do postupdate
+if [ ! "$etcVers" = "$bspVers" ]; then
+   mkdir -p $ROOTTMPMNT
+   mount -o bind / $ROOTTMPMNT
+   . $ROOTTMPMNT/etc/migrations/postupdate.sh
+   umount -l $ROOTTMPMNT
+   rm -r $ROOTTMPMNT
+fi
+
+if [ ! -e /etc/configured -a -e $FACTORYTMPMNT/machine.ini ]; then
+   exorint_apply_default_settings
+   reboot -f
+fi
+
+# Read screen rotation settings
+rotation=0
+[ -s /etc/rotation ] && read rotation < /etc/rotation
+
+if [ ! -z "$FASTBOOT" ] && [ -x /usr/bin/setoverlay ]; then
+    #if we can use overlay, FB1 is used for psplash
+    export FBDEV=/dev/fb1;
+    #Create overlay!
+    /usr/bin/setoverlay;
+fi;
+
+if [ ! -z "$FASTBOOT" ] && [ -x /usr/bin/xsplash ]; then
+    #No close psplash when Xorg starts, is closed by xstarts
+    psplash_opts='--no-console-switch --no-progress-bar'
+fi;
+
+/usr/bin/psplash --angle $rotation $psplash_opts &
+
+# Post-processing - setup other links to factory (global settings)
+[ ! -L /etc/pointercal.xinput ] && ln -sf $FACTORYTMPMNT/etc/pointercal.xinput /etc/pointercal.xinput
+[ ! -L /etc/rotation ] && ln -sf $FACTORYTMPMNT/etc/rotation /etc/rotation
+[ ! -L /etc/X11/xorg.conf.d/x11-rotate.conf ] && mkdir -p /etc/X11/xorg.conf.d && \
+    ln -sf $FACTORYTMPMNT/etc/X11/xorg.conf.d/x11-rotate.conf /etc/X11/xorg.conf.d/x11-rotate.conf
+
+#################################################
+#S29read-only-rootfs-hook.sh -> ../init.d/read-only-rootfs-hook.sh
+#/etc/init.d/read-only-rootfs-hook.sh start
+grep -q "tmpfs /var/volatile" /proc/mounts || mount /var/volatile
+mkdir -p /var/volatile/lib
+# Do not copy rpm and opkg directories
+for f in $( ls /var/lib | sed "/\(rpm\|opkg\)/d" ); do
+    cp -a /var/lib/$f /var/volatile/lib
+done
+mount --bind /var/volatile/lib /var/lib
+
+#################################################
+#S35mountall.sh -> ../init.d/mountall.sh
+#/etc/init.d/mountall.sh start
+mount -at nonfs,nosmbfs,noncpfs 2>/dev/null
+if test ! -p /dev/initctl
+then
+	rm -f /dev/initctl
+	mknod -m 600 /dev/initctl p
+fi
+kill -USR1 1
+
+#################################################
+#S37populate-volatile.sh -> ../init.d/populate-volatile.sh
+#/etc/init.d/populate-volatile.sh start
+VOLATILELOGDIR="/var/volatile/log"
+logP=$( cat /etc/default/volatiles/pLogFlag 2>/dev/null )
+mkdir -p $VOLATILELOGDIR
+# At boot time, mount persistent log location if persistence is enabled
+if [ "$logP" = "y" ]; then
+    /etc/init.d/populate-volatile.sh start
+fi
+
+mkdir -p "/run/lock";
+chown root.root /run/lock
+chmod 1777 /run/lock
+
+mkdir -p "/var/volatile/log";
+chown root.root /var/volatile/log
+chmod 0755 /var/volatile/log
+
+mkdir -p "/var/volatile/tmp";
+chown root.root /var/volatile/tmp
+chmod 1777 /var/volatile/tmp
+
+mkdir -p "/var/lock/subsys";
+chown root.root /var/lock/subsys
+chmod 0755 /var/lock/subsys
+
+touch "/var/log/wtmp";
+chown root.root /var/log/wtmp
+chmod 0664 /var/log/wtmp
+
+touch "/var/run/utmp";
+chown root.root /var/run/utmp
+chmod 0664 /var/run/utmp
+
+touch "/var/run/resolv.conf";
+chown root.root /var/run/resolv.conf
+chmod 0644 /var/run/resolv.conf
+
+mkdir -p "/var/run/sepermit";
+chown root.root /var/run/sepermit
+chmod 0755 /var/run/sepermit
+
+if [ -f /etc/ld.so.cache ] && [ ! -f /var/run/ld.so.cache ]
+then
+	ln -s /etc/ld.so.cache /var/run/ld.so.cache
+fi
+
+#################################################
+#S38devpts.sh -> ../init.d/devpts.sh
+#/etc/init.d/devpts.sh start
+. /etc/default/devpts
+if grep -q devpts /proc/filesystems
+then
+	test -c /dev/ptmx || mknod -m 666 /dev/ptmx c 5 2
+    if ! grep -q devpts /proc/mounts
+	then
+		mkdir -p /dev/pts
+		mount -t devpts devpts /dev/pts -ogid=${TTYGRP},mode=${TTYMODE}
+	fi
+fi
+
+#################################################
+#S39hostname.sh -> ../init.d/hostname.sh
+#/etc/init.d/hostname.sh start
+if [ ! -r /etc/hostname ]
+then
+    /etc/init.d/hostname.sh
+else
+    hostname -F /etc/hostname
+fi
+
+#################################################
+#S40networking_loopback -> ../init.d/networking_loopback
+#/etc/init.d/networking_loopback start
+INTERFACESCONF="/etc/network/interfaces"
+[ -r "${INTERFACESCONF}" ] && ifconfig lo up
+
+#################################################
+carrier_ver=$( exorint_ver_carrier )
+if [ "$carrier_ver" == "WU16" ] && [ -e /etc/udev.tar ]
+then
+    cd /
+    tar xf /etc/udev.tar
+else
+    #S50fastboot-checks.sh -> ../init.d/fastboot-checks.sh
+    #/etc/init.d/fastboot-checks.sh start
+    echo -e '\000\000\000\000' > /proc/sys/kernel/hotplug
+    (/lib/udev/udevd -d &&
+    udevadm control --env=STARTUP=1 &&
+    udevadm trigger --action=add --subsystem-match=input --subsystem-match=spi --subsystem-match=tty --subsystem-match=i2c --subsystem-match=iio &&
+    udevadm trigger --action=change --property-match DRIVER=plxx_manager
+    ) &
+fi
+#################################################
+FACTORYTMPMNT="/mnt/factory/"
+SSL_DIR="${FACTORYTMPMNT}/etc/ssl"
+CERT="${SSL_DIR}/certs/ssl-cert-os.pem"
+CSR="${SSL_DIR}/certs/ssl-cert-os.csr"
+KEY="${SSL_DIR}/private/ssl-cert-os.key"
+SSL_DIR_SYM="/etc/ssl"
+
+if [ ! -f "${CERT}" ] || [ ! -f "${KEY}" ] || [ ! -f "${CSR}" ]; then
+   echo "Generating SSL keypair..."
+
+   mount -o remount,rw ${FACTORYTMPMNT}
+
+   rm -rf "${SSL_DIR}" "${SSL_DIR_SYM}"
+   mkdir -p "$( dirname $CERT )" "$( dirname $KEY )"
+
+   SUBJECT="/CN=$( hostname )"
+
+   openssl req -x509 -nodes -days 36500 -newkey rsa:2048 -sha512 \
+      -subj "${SUBJECT}" \
+      -keyout "${KEY}" -out "${CERT}"
+
+   openssl req -new -key "${KEY}" -sha512 -out "${CSR}" -subj "${SUBJECT}"
+
+   chown -R root:root "${SSL_DIR}"
+   chmod 600 "${KEY}" "${CERT}" "${CSR}"
+
+   mount -o remount,ro ${FACTORYTMPMNT}
+
+fi
+
+if [ ! -L "${SSL_DIR_SYM}" ]; then
+   rm -rf "${SSL_DIR_SYM}"
+   ln -s "${SSL_DIR}" "${SSL_DIR_SYM}"
+fi
+
+# Blind device management
+[ "$(exorint_ver_type)" = "ROUTER" ] &&  exorint_service_enable "router"
+
+# Blind device management
+if [ "$(exorint_ver_type)" = "DEVICE" ] -o [ "$(exorint_ver_type)" = "ROUTER" ]; then
+    # bootcounter reset - done by psplash for panels
+    psplash-write "QUIT"
+fi
+
+#################################################
+#S51gpio.sh -> ../init.d/gpio.sh
+#/etc/init.d/gpio.sh start
+[ -e /etc/default/gpio ]  && (
+mkdir /dev/gpi/
+for index in ${!INPUT_GPIO_ARRAY[*]}
+do
+    echo "${INPUT_GPIO_ARRAY[$index]}" > /sys/class/gpio/export
+    ln -s /sys/class/gpio/gpio"${INPUT_GPIO_ARRAY[$index]}"/ /dev/gpi/"${INPUT_NAME_ARRAY[$index]}"
+#    echo "in" > /dev/gpi/"${INPUT_NAME_ARRAY[$index]}/direction"
+done
+
+mkdir /dev/gpo/
+for index in ${!OUTPUT_GPIO_ARRAY[*]}
+do
+    echo "${OUTPUT_GPIO_ARRAY[$index]}" > /sys/class/gpio/export
+    ln -s /sys/class/gpio/gpio"${OUTPUT_GPIO_ARRAY[$index]}"/ /dev/gpo/"${OUTPUT_NAME_ARRAY[$index]}"
+#    echo "out" > /dev/gpo/"${OUTPUT_NAME_ARRAY[$index]}/direction"
+done
+) &
+
+#################################################
+#S55bootmisc.sh -> ../init.d/bootmisc.sh
+#/etc/init.d/bootmisc.sh start
+(if test -c /dev/ttyp0
+then
+	chmod 666 /dev/tty[p-za-e][0-9a-f]
+	chown root:tty /dev/tty[p-za-e][0-9a-f]
+fi
+
+SYSCTL_CONF="/etc/sysctl.conf"
+if [ -f "${SYSCTL_CONF}" ]
+then
+    /sbin/sysctl -p "${SYSCTL_CONF}"
+fi
+) &

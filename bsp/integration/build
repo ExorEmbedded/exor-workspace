@@ -1,0 +1,379 @@
+#!/bin/bash
+
+declare -A machineTable
+machineTable["us01-hsxx"]="UN60"
+machineTable["us01-plcm"]="UN61"
+machineTable["us03-be15c"]="UN63"
+machineTable["us02-hsxx"]="UN64"
+machineTable["us03-hsxx"]="UN65"
+machineTable["us01-ca16"]="UN66"
+machineTable["us01-wu16"]="UN67"
+machineTable["us03-wu16"]="UN68"
+machineTable["us01-au16"]="UN69"
+machineTable["us01-hs07"]="UN70"
+machineTable["us03-jsxx"]="UN71"
+machineTable["us01-na16"]="UN72"
+machineTable["us03-be15"]="UN73"
+
+machineTable["us03-hsxx:bootloader"]="B03D B03Q"
+
+machineTable["us01-hs07:bootloader"]="B01S"
+machineTable["us01-hs07:xloader"]="X01S"
+
+# Keeps component versions to build
+declare -A versions
+
+# Components for which a git tag will be created
+TO_TAG="rootfs sdk"
+
+BUILD="$( echo "$BUILD" | sed "s/,/ /g" | sed "s/rootfs/mainos configos/" )"
+MACHINE="$( echo "$MACHINE" | sed "s/,/ /g" | sed "s/(....)//g" )"
+
+if ( echo $BUILD | grep -q sdk ); then
+	$MACHINE = "us01-hsxx"
+fi
+
+if [ "$STABLE_BUILD" = "true" ]; then
+   BRANCH="stable"
+   VBRANCH="1.0.x"
+else
+   BRANCH="unstable"
+   VBRANCH="1.999.x"
+fi
+
+# Yocto folders
+DEPLOY_DIR="$HOME/work/$BRANCH/build/tmp/deploy/images"
+TARGET_WORK_DIR="$HOME/work/$BRANCH/build/tmp/work/cortexa8hf-vfp-neon-poky-linux-gnueabi"
+GIT_DIR="$HOME/work/$BRANCH/git"
+TOOL_DIR="$GIT_DIR/bsp"
+
+SDK_DLV_DIR="$HOME/work/delivering/UN60_HSXX/linux-$VBRANCH/SDK"
+
+DBG_DLV_DIR="$HOME/work/delivering/UN6X_DebugInfo"
+
+# Get version to build for specified machine component, increment it if required
+#   $1 - machine
+#   $2 - component
+getVersion() {
+
+   unset VFile
+   unset RVFile
+
+   case "$2" in
+   "sdk")
+      VFile="../meta-branding-exorint/recipes-image/images/sdk-version.inc"
+      ;;
+   "mainos"|"configos")
+      VFile="../meta-branding-exorint/recipes-image/images/mainos-version.inc"
+      PVFile="../meta-branding-exorint/recipes-image/images/mainos-version.inc \
+             ../meta-branding-exorint/recipes-image/images/configos-version.inc"
+      ;;
+   "xloader"|"bootloader")
+      VFile="../meta-exorint/recipes-bsp/$2/version.inc"
+      ;;
+   "kernel")
+      VFile="../meta-exorint/recipes-kernel/linux/version.inc"
+      ;;
+   *)
+      echo "Unknown cpnt" && exit 1
+      ;;
+   esac
+   
+   if [ ! "$2" == "sdk" ]; then
+      ( cat "$VFile" | grep -q $1 ) || return
+   fi
+   
+   if ( cat "$VFile" | grep -q ^IMG_VERSION ); then
+       strV="XXXXXXXXX$( cat "$VFile" | grep ^IMG_VERSION | cut -d"\"" -f2 )"
+   else
+       if [ "$2" == "sdk" ]; then
+           # Build usom01 SDK
+           strV="$( cat "$VFile" | grep usom01 | cut -d"\"" -f2 )"
+       else
+           strV="$( cat "$VFile" | grep $1 | cut -d"\"" -f2 )"
+       fi
+   fi
+
+   # Take last 8 chars
+   strV="${strV:$((${#strV}-8))}"
+
+   maj=$( echo ${strV:0:2} | sed "s:^0::" )
+   min=$( echo ${strV:2:3} | sed "s:\(^0\|^00\)::" )
+   b=$( echo ${strV:5:3} | sed "s:\(^0\|^00\)::" )
+
+   # Increment build number if required
+   if [ "$AUTO_INCREMENT_BUILD_NUMBER" = "true" ]; then
+
+      if [ "$2" = "mainos" ] || [ "$2" = "configos" ]; then
+          if [ -z "$rootfs_incr" ]; then
+              rootfs_incr="1"
+              ((b++))
+              tb="00$b"
+              echo "$PVFile" | xargs -n1 sed -i'' /IMG_VERSION/s/[0-9][0-9][0-9]\"/${tb:${#tb}-3:3}\"/ || exit 1
+          fi
+      else
+          ((b++))
+          tb="00$b"
+          if [ "$2" == "sdk" ]; then
+              sed -i'' /usom01/s/[0-9][0-9][0-9]\"/${tb:${#tb}-3:3}\"/ "$VFile" || exit 1
+          else
+              sed -i'' /$1/s/[0-9][0-9][0-9]\"/${tb:${#tb}-3:3}\"/ "$VFile" || exit 1
+          fi
+      fi
+   fi
+
+   versions["$1:$2"]="${maj}.${min}.${b}"
+}
+
+# Delivering functions
+deliver_raw_image()
+{
+     mkdir -p "$2"
+     IMGFILENAME="`echo $(basename $1) | sed s/tar.gz/img/`"
+     tar xvf "$1" -C "$2" || exit 1
+     mv "$2/$3" "$2/$IMGFILENAME" || exit 1
+     md5sum "$2/$IMGFILENAME" | awk '{print $1}' > "$2/$IMGFILENAME.md5" || exit 1
+}
+
+deliver_tar_gz()
+{
+     mkdir -p "$2"
+     IMGFILENAME="`echo $(basename $1)`"
+     cp "$1" "$2" || exit 1
+     md5sum "$2/$IMGFILENAME" | awk '{print $1}' > "$2/$IMGFILENAME.md5" || exit 1
+}
+
+deliver_sdk()
+{
+     mkdir -p $SDK_DLV_DIR
+     IMGFILENAME="`echo $(basename $1)`"
+     cp $1 $SDK_DLV_DIR || exit 1
+     md5sum $SDK_DLV_DIR/$IMGFILENAME | awk '{print $1}' > $SDK_DLV_DIR/$IMGFILENAME.md5 || exit 1
+}
+
+
+if [ -n "$CUSTOM_PARAMS" ]; then
+   echo -e " *\n * Executing custom command: ./bsptool $CUSTOM_PARAMS \n*"
+   ./bsptool $CUSTOM_PARAMS
+   exit $?
+fi
+
+# Checkout version files
+cd $GIT_DIR/meta-branding-exorint/
+git checkout recipes-image/images/mainos-version.inc
+git checkout recipes-image/images/configos-version.inc
+git checkout recipes-image/images/sdk-version.inc
+
+cd $GIT_DIR/meta-exorint/
+git checkout recipes-bsp/bootloader/version.inc
+git checkout recipes-bsp/xloader/version.inc
+git checkout recipes-kernel/linux/version.inc
+
+cd $TOOL_DIR
+
+# Remove -u flag if stable build
+git checkout bsptool.local
+if [ "$STABLE_BUILD" = "true" ]; then
+   sed -i'' s/EXOS_VERSION_TAG=\"u\"/EXOS_VERSION_TAG=\"\"/ "bsptool.local"
+fi
+
+# Look for old bitbake processes and kill them
+oldProc="$(ps -ef | grep /bitbake | grep -v grep | awk '{print $2}')"
+if [ -n "$oldProc" ]; then
+   echo " *"
+   for pid in $oldProc; do
+      echo " * Found running bitbake process (PID $pid). Trying to kill..."
+      kill -kill $pid
+   done
+fi
+
+[ "$CLEAN" = "true" ] && echo -e " *\n * Cleaning...\n *" && ./bsptool clean
+if [ "$UPDATE_REPOS" = "true" ]; then
+    # Save local bsp changes/config
+    git stash save
+    echo -e " *\n * Updating repositories...\n *"
+    ./bsptool pull || exit 1
+    # Restore local bsp changes/config
+    git stash pop
+fi
+
+echo " *"
+[ "$AUTO_INCREMENT_BUILD_NUMBER" = "true" ] && echo " * Incrementing build numbers..."
+printf " * Going to build:"
+# Get version to build for each component
+for mach in $MACHINE; do
+    for cpnt in $BUILD; do
+        getVersion "$mach" "$cpnt"
+        [ -n "$maj" ] && printf " $mach-$cpnt($maj.$min.$b)"
+    done
+done
+echo -e "\n *"
+
+echo $BUILD
+
+# Execute bsptool
+for mach in $MACHINE; do
+    ./bsptool -m $mach build $BUILD || exit 1
+done
+
+[ ! $? = 0 ] && exit 1
+
+echo -e " *\n * Build succesfully completed."
+
+# Create debug info package
+if [ -n "$(echo "$BUILD" | grep mainos )" -a -d "$TARGET_WORK_DIR" ]; then
+   echo -e " *\n * Creating debug info package."
+   mach=$( echo $MACHINE | awk '{print $1}' )
+   DBG_PKG_NAME="debugInfo-${versions[$mach:mainos]}"
+   cd $TARGET_WORK_DIR
+   mkdir -p ../$DBG_PKG_NAME/usr/lib
+   mkdir -p ../$DBG_PKG_NAME/lib
+
+   for pkgName in $(ls | cat); do
+      pkg_split="$pkgName/$(ls -t $pkgName | sed -n 1p)/packages-split" 
+      for pkg in $pkgName $pkgName-dbg; do
+         [ -d "$pkg_split/$pkg/lib" ] && cp -r $pkg_split/$pkg/lib/. ../$DBG_PKG_NAME/lib
+         [ -d "$pkg_split/$pkg/usr/lib" ] && cp -r $pkg_split/$pkg/usr/lib/. ../$DBG_PKG_NAME/usr/lib
+      done
+   done
+
+   # gcc-runtime package split names are different. Add it separately
+   pkg_split="gcc-runtime/$(ls -t gcc-runtime | sed -n 1p)/packages-split"
+   [ -d "$pkg_split/libstdc++/usr/lib" ] && cp -r $pkg_split/libstdc++/usr/lib/. ../$DBG_PKG_NAME/usr/lib
+
+   # Remove unnecessary files
+   rm -rf ../$DBG_PKG_NAME/usr/lib/{libQt,qt4,python,perl,rpm,locale,jmuconfig,arm-poky}*
+
+   cd ..
+   tar cjf $DBG_PKG_NAME.bz2 $DBG_PKG_NAME
+   rm -rf $DBG_PKG_NAME
+   mv $DBG_PKG_NAME.bz2 $DEPLOY_DIR
+fi
+
+#   SDK_SYSROOT="$SDK_WORK_DIR/$(ls -t $SDK_WORK_DIR | sed -n 1p)/sdk/image/opt/exorintos/1.5.3/sysroots/cortexa8hf-vfp-neon-poky-linux-gnueabi/"
+#   DBG_PKG_NAME="debugInfo-${versions[mainos]}"
+#
+#   if [ -d "$SDK_SYSROOT" ]; then
+#      echo -e " *\n * Creating debug info package."
+#      cd $SDK_SYSROOT
+#      mkdir -p ../$DBG_PKG_NAME/usr
+#      cp -r lib ../$DBG_PKG_NAME
+#      cp -r usr/lib ../$DBG_PKG_NAME/usr
+#
+#      # Remove unnecessary files
+#      rm -rf ../$DBG_PKG_NAME/usr/lib/{libQt,qt4,python,perl,rpm,locale,jmuconfig,arm-poky}*
+#
+#     cd ..
+#      tar cjf $DBG_PKG_NAME.bz2 $DBG_PKG_NAME
+#      rm -rf $DBG_PKG_NAME
+#      mv $DBG_PKG_NAME.bz2 $DEPLOY_DIR
+#   fi
+
+
+# Commit changes in version files
+if [ "$AUTO_INCREMENT_BUILD_NUMBER" = "true" ]; then
+   echo -e " *\n * Saving changes to version files..."
+   cd $GIT_DIR/meta-branding-exorint
+   git add recipes-image/images/mainos-version.inc
+   git add recipes-image/images/configos-version.inc
+   git add recipes-image/images/sdk-version.inc
+   git commit -m "Autosvn: Incremented build number"
+   git push
+
+   cd $GIT_DIR/meta-exorint
+
+   git add recipes-bsp/xloader/version.inc
+   git add recipes-bsp/bootloader/version.inc
+   git add recipes-kernel/linux/version.inc
+   git commit -m "Autosvn: Incremented build number"
+   git push
+
+   # Create tags for each built component in TO_TAG
+   if [ ! "$SKIP_TAG" = "true" ]; then
+      echo -e " *\n * Creating tags..."
+      cd $GIT_DIR/bsp
+      for ctag in $TO_TAG; do
+        for mach in $MACHINE; do
+          if [ "$ctag" = "rootfs" -a -n "$(echo "$BUILD" | grep mainos )" ]; then
+            if [ -z "$rootfs_tag" ]; then
+              rootfs_tag="1"
+              ./bsptool cmd git tag ${ctag}-${versions[$mach:mainos]} || exit 1
+              ./bsptool cmd git push origin ${ctag}-${versions[$mach:mainos]} || exit 1
+            fi
+            continue
+          fi
+          [ -z "${versions[$mach-$ctag]}" ] && continue
+          ./bsptool cmd git tag ${ctag}-${mach}-${versions[$mach:$ctag]} || exit 1
+          ./bsptool cmd git push origin ${ctag}-${mach}-${versions[$mach:$ctag]} || exit 1
+        done
+      done
+   fi
+
+fi
+
+if [ ! "$SKIP_DELIVERING" = "true" ]; then
+   echo -e " *\n * Delivering files..."
+   
+   mkdir -p $DBG_DLV_DIR
+
+   for elem in ${!versions[@]}; do
+
+      mach="$(echo $elem | cut -d':' -f1)"
+      carrier="$(echo $mach | cut -d'-' -f2)"
+      carrier="${carrier:0:4}"
+      cpnt="$(echo $elem | cut -d':' -f2)"
+      
+      if ( echo $mach | grep -q "us03-" ); then
+         ubootExt=".imx"
+      else
+         ubootExt=".img"
+      fi
+      
+      
+      if [ -n "${machineTable[$elem]}" ]; then
+         name="${machineTable[$elem],,}"
+      else
+         name="${machineTable[$mach],,}"
+      fi
+
+      dlvDir="$HOME/work/delivering/${machineTable[$mach]}_${carrier^^}/linux-$VBRANCH/bsp"
+      
+      echo -e " *\n * Delivering $mach $cpnt..."
+      
+      mkdir -p $dlvDir
+
+      cd $DEPLOY_DIR/$mach
+
+      if [ "$cpnt" = "sdk" ]; then
+        deliver_sdk ../../sdk/$( ls ../../sdk | grep "sdk-${versions[$elem]}" )
+        continue
+      fi
+
+      case "$cpnt" in
+         "mainos"|"configos")
+            deliver_tar_gz "$( readlink $name-$carrier-$cpnt.tar.gz )" "$dlvDir/$cpnt"
+            ;;
+         "xloader")
+            deliver_raw_image "$( readlink $name-$carrier-$cpnt.tar.gz )" "$dlvDir/$cpnt" MLO
+            ;;
+         "bootloader")
+            # us03-hsxx has two differet bootloaders, b03d and b03q
+            for sname in $name; do
+               deliver_raw_image "$( readlink $sname-$carrier-$cpnt.tar.gz )" "$dlvDir/$cpnt" u-boot$ubootExt
+            done
+            ;;
+      esac
+   done
+   [ -n "$DBG_PKG_NAME" -a -e "$DEPLOY_DIR/$DBG_PKG_NAME.bz2" ] && cp $DEPLOY_DIR/$DBG_PKG_NAME.bz2 $DBG_DLV_DIR
+fi
+
+echo -e " *\n * Generating Release History...\n *"
+
+cd $GIT_DIR/bsp
+./bsptool history
+./bsptool history_merge
+
+
+echo -e " *\n * All done!...\n *"
+
+exit 0

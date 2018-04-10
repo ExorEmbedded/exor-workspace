@@ -1,0 +1,13 @@
+Index: git/misc/mke2fs.c
+===================================================================
+--- git.orig/misc/mke2fs.c
++++ git/misc/mke2fs.c
+@@ -84,7 +84,7 @@ int	quiet;
+ static int	super_only;
+ static int	discard = 1;	/* attempt to discard device before fs creation */
+ static int	direct_io;
+-static int	force;
++static int	force = 1;
+ static int	noaction;
+ static int	num_backups = 2; /* number of backup bg's for sparse_super2 */
+ static uid_t	root_uid;

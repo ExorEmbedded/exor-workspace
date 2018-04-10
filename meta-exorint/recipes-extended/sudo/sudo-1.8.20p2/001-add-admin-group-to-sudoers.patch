@@ -1,0 +1,15 @@
+Index: sudo-1.8.7/plugins/sudoers/sudoers.in
+===================================================================
+--- sudo-1.8.7.orig/plugins/sudoers/sudoers.in
++++ sudo-1.8.7/plugins/sudoers/sudoers.in
+@@ -71,6 +71,10 @@
+ ##
+ root ALL=(ALL) ALL
+ 
++# <Exor>
++%admin ALL=(ALL) NOPASSWD: ALL
++# </Exor>
++
+ ## Uncomment to allow members of group wheel to execute any command
+ # %wheel ALL=(ALL) ALL
+ 

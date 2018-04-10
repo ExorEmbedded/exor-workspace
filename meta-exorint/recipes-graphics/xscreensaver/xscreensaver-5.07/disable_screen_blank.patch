@@ -1,0 +1,235 @@
+--- xscreensaver-5.07/driver/windows.c	2008-08-11 05:45:14.000000000 +0200
++++ xscreensaver-5.07-b/driver/windows.c	2016-03-30 10:59:07.555659542 +0200
+@@ -1478,12 +1478,12 @@
+   if (si->emergency_lock_p)
+     inhibit_fade = True;
+ 
+-  if (!dont_clear)
+-    initialize_screensaver_window (si);
++  //if (!dont_clear)
++  //  initialize_screensaver_window (si);
+ 
+   reset_watchdog_timer (si, True);
+ 
+-  if (p->fade_p && si->fading_possible_p && !inhibit_fade)
++/*  if (p->fade_p && si->fading_possible_p && !inhibit_fade)
+     {
+       Window *current_windows = (Window *)
+ 	calloc(sizeof(Window), si->nscreens);
+@@ -1498,29 +1498,28 @@
+ 			     ? ssi->cmap
+ 			     : DefaultColormapOfScreen (ssi->screen));
+ 	  /* Ensure that the default background of the window is really black,
+-	     not a pixmap or something.  (This does not clear the window.) */
++	     not a pixmap or something.  (This does not clear the window.)
+ 	  XSetWindowBackground (si->dpy, ssi->screensaver_window,
+ 				ssi->black_pixel);
+ 	}
+ 
+       if (p->verbose_p) fprintf (stderr, "%s: fading...\n", blurb());
+ 
+-      XGrabServer (si->dpy);			/* ############ DANGER! */
++      XGrabServer (si->dpy);			/* ############ DANGER!
+ 
+       /* Clear the stderr layer on each screen.
+-       */
+       if (!dont_clear)
+ 	for (i = 0; i < si->nscreens; i++)
+ 	  {
+ 	    saver_screen_info *ssi = &si->screens[i];
+ 	    if (ssi->stderr_overlay_window)
+ 	      /* Do this before the fade, since the stderr cmap won't fade
+-		 even if we uninstall it (beats me...) */
++		 even if we uninstall it (beats me...)
+ 	      clear_stderr (ssi);
+ 	  }
+ 
+       /* Note!  The server is grabbed, and this will take several seconds
+-	 to complete! */
++	 to complete!
+       fade_screens (si->dpy, current_maps,
+                     current_windows, si->nscreens,
+ 		    p->fade_seconds/1000, p->fade_ticks, True, !dont_clear);
+@@ -1540,17 +1539,17 @@
+ 	      window_exists_p (si->dpy, ssi->server_mit_saver_window))
+ 	    XUnmapWindow (si->dpy, ssi->server_mit_saver_window);
+ 	}
+-#endif /* HAVE_MIT_SAVER_EXTENSION */
++#endif /* HAVE_MIT_SAVER_EXTENSION
+ 
+       XUngrabServer (si->dpy);
+-      XSync (si->dpy, False);			/* ###### (danger over) */
++      XSync (si->dpy, False);			/* ###### (danger over)
+     }
+   else
+     {
+       for (i = 0; i < si->nscreens; i++)
+ 	{
+ 	  saver_screen_info *ssi = &si->screens[i];
+-	  if (!dont_clear)
++	  /*if (!dont_clear)
+ 	    XClearWindow (si->dpy, ssi->screensaver_window);
+ 	  if (!dont_clear || ssi->stderr_overlay_window)
+ 	    clear_stderr (ssi);
+@@ -1559,7 +1558,7 @@
+ 	  if (ssi->server_mit_saver_window &&
+ 	      window_exists_p (si->dpy, ssi->server_mit_saver_window))
+ 	    XUnmapWindow (si->dpy, ssi->server_mit_saver_window);
+-#endif /* HAVE_MIT_SAVER_EXTENSION */
++#endif /* HAVE_MIT_SAVER_EXTENSION
+ 	}
+     }
+ 
+@@ -1568,7 +1567,7 @@
+       saver_screen_info *ssi = &si->screens[i];
+       if (ssi->cmap)
+ 	XInstallColormap (si->dpy, ssi->cmap);
+-    }
++    }*/
+ }
+ 
+ 
+@@ -1646,7 +1645,7 @@
+   if (!ok)
+     return False;
+ 
+-  for (i = 0; i < si->nscreens; i++)
++/*  for (i = 0; i < si->nscreens; i++)
+     {
+       saver_screen_info *ssi = &si->screens[i];
+       if (ssi->real_screen_p)
+@@ -1654,7 +1653,7 @@
+       store_vroot_property (si->dpy,
+ 			    ssi->screensaver_window,
+ 			    ssi->screensaver_window);
+-
++/*
+ #ifdef HAVE_XF86VMODE
+       {
+         int ev, er;
+@@ -1664,9 +1663,9 @@
+                                           &ssi->blank_vp_y))
+           ssi->blank_vp_x = ssi->blank_vp_y = -1;
+       }
+-#endif /* HAVE_XF86VMODE */
++#endif /* HAVE_XF86VMODE
+     }
+-
++*/
+   raise_window (si, False, False, False);
+ 
+   si->screen_blanked_p = True;
+@@ -1686,13 +1685,13 @@
+   Bool unfade_p = (si->fading_possible_p && p->unfade_p);
+   int i;
+ 
+-  monitor_power_on (si);
++//  monitor_power_on (si);
+   reset_watchdog_timer (si, False);
+ 
+   if (si->demoing_p)
+     unfade_p = False;
+ 
+-  if (unfade_p)
++/*  if (unfade_p)
+     {
+       Window *current_windows = (Window *)
+ 	calloc(sizeof(Window), si->nscreens);
+@@ -1702,7 +1701,7 @@
+ 	  saver_screen_info *ssi = &si->screens[i];
+ 	  current_windows[i] = ssi->screensaver_window;
+ 	  /* Ensure that the default background of the window is really black,
+-	     not a pixmap or something.  (This does not clear the window.) */
++	     not a pixmap or something.  (This does not clear the window.)
+ 	  XSetWindowBackground (si->dpy, ssi->screensaver_window,
+ 				ssi->black_pixel);
+ 	}
+@@ -1711,11 +1710,11 @@
+ 
+ 
+       XSync (si->dpy, False);
+-      XGrabServer (si->dpy);			/* ############ DANGER! */
++      XGrabServer (si->dpy);			/* ############ DANGER!
+       XSync (si->dpy, False);
+ 
+       /* Clear the stderr layer on each screen.
+-       */
++       
+       for (i = 0; i < si->nscreens; i++)
+ 	{
+ 	  saver_screen_info *ssi = &si->screens[i];
+@@ -1723,7 +1722,7 @@
+ 	}
+ 
+       XUngrabServer (si->dpy);
+-      XSync (si->dpy, False);			/* ###### (danger over) */
++      XSync (si->dpy, False);			/* ###### (danger over) 
+ 
+       fade_screens (si->dpy, 0,
+                     current_windows, si->nscreens,
+@@ -1740,17 +1739,17 @@
+       for (i = 0; i < si->nscreens; i++)
+ 	{
+ 	  saver_screen_info *ssi = &si->screens[i];
+-	  if (ssi->cmap)
+-	    {
+-	      Colormap c = DefaultColormapOfScreen (ssi->screen);
+-	      /* avoid technicolor */
+-	      XClearWindow (si->dpy, ssi->screensaver_window);
+-	      if (c) XInstallColormap (si->dpy, c);
+-	    }
++	  //if (ssi->cmap)
++	  //  {
++	  //    Colormap c = DefaultColormapOfScreen (ssi->screen);
++	  //    /* avoid technicolor
++	  //    XClearWindow (si->dpy, ssi->screensaver_window);
++	  //    if (c) XInstallColormap (si->dpy, c);
++	  //  }
+ 	  XUnmapWindow (si->dpy, ssi->screensaver_window);
+ 	}
+     }
+-
++*/
+ 
+   /* If the focus window does has a non-default colormap, then install
+      that colormap as well.  (On SGIs, this will cause both the root map
+@@ -1758,7 +1757,7 @@
+      pick up the other colormaps that had been installed, too; perhaps
+      XListInstalledColormaps could be used for that?)
+    */
+-  {
++ /* {
+     Window focus = 0;
+     int revert_to;
+     XGetInputFocus (si->dpy, &focus, &revert_to);
+@@ -1772,24 +1771,24 @@
+ 	  XInstallColormap (si->dpy, xgwa.colormap);
+       }
+   }
++*/
+ 
+-
+-  for (i = 0; i < si->nscreens; i++)
++  /*for (i = 0; i < si->nscreens; i++)
+     {
+       saver_screen_info *ssi = &si->screens[i];
+       kill_xsetroot_data (si->dpy, ssi->screensaver_window, p->verbose_p);
+-    }
++    }*/
+ 
+   store_saver_status (si);  /* store unblank time */
+   ungrab_keyboard_and_mouse (si);
+-  restore_real_vroot (si);
++  //restore_real_vroot (si);
+ 
+   /* Unmap the windows a second time, dammit -- just to avoid a race
+      with the screen-grabbing hacks.  (I'm not sure if this is really
+      necessary; I'm stabbing in the dark now.)
+   */
+-  for (i = 0; i < si->nscreens; i++)
+-    XUnmapWindow (si->dpy, si->screens[i].screensaver_window);
++  //for (i = 0; i < si->nscreens; i++)
++  //  XUnmapWindow (si->dpy, si->screens[i].screensaver_window);
+ 
+   si->screen_blanked_p = False;
+   si->blank_time = time ((time_t) 0);

@@ -1,0 +1,12 @@
+diff -uNr qemu-2.10.0/disas/libvixl/vixl/utils.h qemu-2.10.0-2/disas/libvixl/vixl/utils.h
+--- qemu-2.10.0/disas/libvixl/vixl/utils.h	2018-04-04 09:26:20.895258830 +0200
++++ qemu-2.10.0-2/disas/libvixl/vixl/utils.h	2018-04-04 09:26:02.108259030 +0200
+@@ -27,6 +27,8 @@
+ #ifndef VIXL_UTILS_H
+ #define VIXL_UTILS_H
+ 
++#define _GLIBCXX11_USE_C99_MATH 1
++
+ #include <string.h>
+ #include <cmath>
+ #include "vixl/globals.h"

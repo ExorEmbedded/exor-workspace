@@ -1,0 +1,40 @@
+#!/bin/bash -xe
+#
+# Make a backup and remove old mounted content
+# Import common functions
+
+PROG="utils/$(basename $0)"
+if [ ! -e "${PWD}/${PROG}" ]; then 
+    echo "${PROG} must be run from bsp directory!"
+    exit 1
+fi
+
+SUFFIX=$1
+
+if [ -z ${BAKDIR} ]; then
+    BAKDIR="${HOME}/bak/${MACHINE}${SUFFIX}"
+    if [ "${DEPLOYFLAVOUR}" != "" ]; then
+        BAKDIR="${BAKDIR}-${DEPLOYFLAVOUR}"
+    fi
+    BAKDIR="${BAKDIR}${SUFFIX}"
+fi
+
+OVERRIDE="${PWD}/bsptool.local"
+[ -e "${OVERRIDE}" ] && source "${OVERRIDE}"
+
+NOW=`date +%d%m%y%H%M%S`
+[ -e "${BAKDIR}" ] && mv "${BAKDIR}" "${BAKDIR}.bak-${NOW}"
+
+BAKBOOT="${BAKDIR}/boot"
+mkdir -p "${BAKBOOT}"
+
+BAKROOT="${BAKDIR}/root"
+mkdir -p "${BAKROOT}"
+
+# make sure dir is not empty
+FIRSTFILE="$(sudo find "${MNTBOOT}" -type f -print -quit)"
+[ "${FIRSTFILE}" == "" ] || sudo rsync -a --delete "${MNTBOOT}/" "${BAKBOOT}/"
+
+# make sure dir is not empty
+FIRSTFILE="$(sudo find "${MNTROOT}" -type f -print -quit)"
+[ "${FIRSTFILE}" == "" ] || sudo rsync -a --delete "${MNTROOT}/" "${BAKROOT}/"

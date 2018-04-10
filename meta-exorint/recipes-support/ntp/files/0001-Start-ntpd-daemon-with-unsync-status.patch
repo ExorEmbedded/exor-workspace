@@ -1,0 +1,25 @@
+From e67a96793ad3541d25d9f2d0b97eca7fdce09d88 Mon Sep 17 00:00:00 2001
+From: Luigi Scagnet Exor Int <luigi.scagnet@exorint.com>
+Date: Thu, 8 Feb 2018 14:43:42 +0100
+Subject: [PATCH] Start ntpd daemon with unsync status
+
+---
+ ntpd/ntp_loopfilter.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ntpd/ntp_loopfilter.c b/ntpd/ntp_loopfilter.c
+index 8d44fb1..6e69e7f 100644
+--- a/ntpd/ntp_loopfilter.c
++++ b/ntpd/ntp_loopfilter.c
+@@ -1099,7 +1099,7 @@ start_kern_loop(void)
+ 	pll_control = TRUE;
+ 	ZERO(ntv);
+ 	ntv.modes = MOD_BITS;
+-	ntv.status = STA_PLL;
++	ntv.status = STA_PLL | STA_UNSYNC;
+ 	ntv.maxerror = MAXDISPERSE;
+ 	ntv.esterror = MAXDISPERSE;
+ 	ntv.constant = sys_poll; /* why is it that here constant is unconditionally set to sys_poll, whereas elsewhere is is modified depending on nanosecond vs. microsecond kernel? */
+-- 
+1.9.1
+

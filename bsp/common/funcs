@@ -1,0 +1,140 @@
+#
+# message and error handling
+# 
+
+# Write a message to standard output
+msg()
+{
+    #[ "${LOG}" == "" ] && return 0
+
+    #echo "# $@" | tee -a "${LOG}"
+    echo "# $@"
+
+    return 0
+}
+
+die()
+{
+    msg "$@"
+
+    exit 1
+}
+
+# Plain command wrapping
+wrap()
+{
+    msg "Executing '$@'"
+
+    #$@ 2>&1 | tee -a "${LOG}"
+    $@ 2>&1
+    RC=$?
+
+    # detect errors in pipe lvalue
+    #RC=${PIPESTATUS[0]}
+    [ ${RC} -ne 0 ] && exit ${RC}
+
+    return 0
+}
+
+# Quiet command wrapping (no standard output)
+qwrap()
+{
+    if [ "${VERBOSE}" != "" ]; then
+        wrap $@
+        return 0
+    fi
+
+    msg "Executing '$@' (quiet)"
+    $@ > /dev/null
+    RC=$?
+    [ ${RC} -ne 0 ] && exit ${RC}
+
+    return $?
+}
+
+# Return 0 if y|Y is entered, 1 otherwise
+yesno()
+{
+    while true; do
+
+        msg "$@"
+        read input
+
+        case "${input}" in
+            y|Y)
+                return 0
+                ;;
+            n|N)
+                return 1
+                ;;
+            *)
+                ;;
+        esac
+    done
+}
+
+#
+# versioning
+# 
+
+# code: US01HSXXM01002003AB
+# human: US01-HSXX-M-1.2.3-AB-U
+versionSplit2Code()
+{
+    CPU=$1
+    CARRIER=$2
+    COMPONENT=$3
+    MAJOR=$4
+    MINOR=$5
+    BUILD=$6
+    CUSTOMER=$7  # optional
+
+    [[ $# -eq 6 || $# -eq 7 ]] || die "versionSplit2Code() takes 7 or 8 parameters!"
+
+    [ ${#CPU} -eq 4 ] || die "CPU must have exactly 4 chars"
+    [ ${#CARRIER} -eq 4 ] || die "CARRIER have be exactly 4 chars"
+    [ ${#COMPONENT} -eq 1 ] || die "COMPONENT must have exactly 1 char"
+
+    MAJORPARSE=$(echo ${MAJOR} | grep -E -w "[0-9]{1,2}")
+    [ $? -ne 0 ] && die "MAJOR must be a number from 0 to 99"
+    MAJORPAD=$(printf "%02d" ${MAJORPARSE})
+
+    MINORPARSE=$(echo ${MINOR} | grep -E -w "[0-9]{1,3}")
+    [ $? -ne 0 ] && die "MINOR must be a number from 0 to 999"
+    MINORPAD=$(printf "%03d" ${MINORPARSE})
+
+    BUILDPARSE=$(echo ${BUILD} | grep -E -w "[0-9]{1,3}")
+    [ $? -ne 0 ] && die "BUILD must be a number from 0 to 999"
+    BUILDPAD=$(printf "%03d" ${BUILDPARSE})
+    
+    if [ "${CUSTOMER}" != "" ]; then
+       [ ${#CUSTOMER} -eq 2 ] || die "If specified, customer must have exactly 2 chars"
+    fi
+
+    echo "${CPU}${CARRIER}${COMPONENT}${MAJORPAD}${MINORPAD}${BUILDPAD}${CUSTOMER}"
+}
+
+versionCode2Human()
+{
+    [ $# -eq 1 ] || die "versionCode2Human() takes 1 parameter!"
+
+    CODE=$1
+
+    [[ ${#CODE} -eq 17 || ${#CODE} -eq 19 ]] || die "VERSION code must have 17 or 19 characters!"
+
+    CPUGRAB=${CODE:0:4}
+    CARRIERGRAB=${CODE:4:4}
+    COMPONENTGRAB=${CODE:8:1}
+    MAJORGRAB=${CODE:9:2}
+    MINORGRAB=${CODE:11:3}
+    BUILDGRAB=${CODE:14:3}
+    CUSTOMERGRAB=${CODE:17:2}  # optional
+
+    echo -n ${CPUGRAB}
+    echo -n -${CARRIERGRAB}
+    echo -n -${COMPONENTGRAB}
+    echo -n -${MAJORGRAB} | sed 's/^-0*/-/'
+    echo -n .${MINORGRAB} | sed 's/^.0*/./'
+    echo -n .${BUILDGRAB} | sed 's/^.0*/./'
+    [ "${CUSTOMERGRAB}" != "" ] && echo -n -${CUSTOMERGRAB}
+}

@@ -1,0 +1,23 @@
+diff -uNr chromium-62.0.3202.94-2/base/files/important_file_writer.cc chromium-62.0.3202.94/base/files/important_file_writer.cc
+--- chromium-62.0.3202.94-2/base/files/important_file_writer.cc	2017-12-08 17:12:21.900746906 +0100
++++ chromium-62.0.3202.94/base/files/important_file_writer.cc	2017-12-08 17:29:12.091736169 +0100
+@@ -34,7 +34,7 @@
+ 
+ namespace {
+ 
+-constexpr auto kDefaultCommitInterval = TimeDelta::FromSeconds(10);
++constexpr auto kDefaultCommitInterval = TimeDelta::FromSeconds(1);
+ 
+ // This enum is used to define the buckets for an enumerated UMA histogram.
+ // Hence,
+@@ -198,6 +198,10 @@
+     return false;
+   }
+ 
++#if defined(OS_LINUX)
++  sync();
++#endif
++
+   return true;
+ }
+ 

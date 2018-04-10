@@ -1,0 +1,32 @@
+source bsptool.defaults
+
+#
+# Local overrides here ..  see bsptool.defaults for default values!
+# Warning: DON'T FORGET ABOUT THEM!!!
+#
+
+#
+# Local variables
+#
+
+#VERBOSE=true
+
+# what to deploy (default is core exorintos image)
+#DEPLOYFLAVOUR="router"
+
+#
+# Exports for bitbake
+#
+
+# default machine is usom - for BeagleBone uncomment the following
+#export MACHINE="beaglebone"
+
+# build optimisation
+export BB_NUMBER_THREADS="4"
+export PARALLEL_MAKE="-j 4"
+
+#
+# Variables exported to recipes 
+# (must be whitelisted via BB_ENV_EXTRAWHITE in bsptool)
+#
+export EXOS_VERSION_TAG=""

@@ -1,0 +1,9 @@
+--- qt-everywhere-opensource-src-4.8.7/config.tests/unix/egl/egl.pro	2017-04-26 15:18:06.439334595 +0200
++++ qt-everywhere-opensource-src-4.8.7-2/config.tests/unix/egl/egl.pro	2017-04-26 15:19:02.615946484 +0200
+@@ -7,4 +7,6 @@
+ !isEmpty(QMAKE_INCDIR_EGL): INCLUDEPATH += $$QMAKE_INCDIR_EGL
+ !isEmpty(QMAKE_LIBS_EGL): LIBS += $$QMAKE_LIBS_EGL
+ 
++DEFINES += LINUX=1 EGL_API_FB=1
++
+ CONFIG -= qt

@@ -1,0 +1,10 @@
+--- xserver-xorg-video-imx-viv-5.0.11.p4.4/EXA/src/vivante_extension/vivante_ext.c	2015-02-13 19:27:43.000000000 +0100
++++ xserver-xorg-video-imx-viv-5.0.11.p4.4b/EXA/src/vivante_extension/vivante_ext.c	2016-11-21 13:28:18.075782595 +0100
+@@ -40,7 +40,6 @@
+ #include "cursorstr.h"
+ #include "scrnintstr.h"
+ #include "servermd.h"
+-#include "swaprep.h"
+ #include "drm.h"
+ #include "xf86Module.h"
+ #include "globals.h"

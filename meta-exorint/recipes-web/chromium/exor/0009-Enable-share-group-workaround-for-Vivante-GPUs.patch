@@ -1,0 +1,13 @@
+diff -uNr chromium-62.0.3202.94/gpu/config/gpu_driver_bug_list.json chromium-62.0.3202.94-2/gpu/config/gpu_driver_bug_list.json
+--- chromium-62.0.3202.94/gpu/config/gpu_driver_bug_list.json	2017-11-13 21:09:23.000000000 +0100
++++ chromium-62.0.3202.94-2/gpu/config/gpu_driver_bug_list.json	2017-12-11 21:23:21.997748173 +0100
+@@ -200,9 +200,6 @@
+       "id": 34,
+       "cr_bugs": [179250, 229643, 230896],
+       "description": "Share groups are not working on (older?) Vivante drivers",
+-      "os": {
+-        "type": "android"
+-      },
+       "gl_extensions": ".*GL_VIV_shader_binary.*",
+       "features": [
+         "use_virtualized_gl_contexts"

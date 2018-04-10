@@ -1,0 +1,59 @@
+diff -uNr chromium-52.0.2743.76/ui/base/ime/input_method_auralinux.cc chromium-52.0.2743.76.2/ui/base/ime/input_method_auralinux.cc
+--- chromium-52.0.2743.76/ui/base/ime/input_method_auralinux.cc	2017-06-21 23:30:56.864654592 +0200
++++ chromium-52.0.2743.76.2/ui/base/ime/input_method_auralinux.cc	2017-06-21 23:32:42.577653469 +0200
+@@ -233,11 +233,11 @@
+   text_input_type_ = GetTextInputType();
+ 
+   // We only focus in |context_| when the focus is in a textfield.
+-  if (old_text_input_type != TEXT_INPUT_TYPE_NONE &&
+-      text_input_type_ == TEXT_INPUT_TYPE_NONE) {
++  if (text_input_type_ == TEXT_INPUT_TYPE_NONE && old_text_input_type != TEXT_INPUT_TYPE_NONE )
++    context_->Blur();
++
++  if (text_input_type_ != TEXT_INPUT_TYPE_NONE) {
+     context_->Blur();
+-  } else if (old_text_input_type == TEXT_INPUT_TYPE_NONE &&
+-             text_input_type_ != TEXT_INPUT_TYPE_NONE) {
+     context_->Focus();
+   }
+ 
+@@ -265,9 +265,16 @@
+   }
+ }
+ 
++void InputMethodAuraLinux::ShowImeIfNeeded() {
++  UpdateContextFocusState();
++}
++
+ void InputMethodAuraLinux::OnTextInputTypeChanged(
+     const TextInputClient* client) {
+-  UpdateContextFocusState();
++
++  if( GetTextInputType() == TEXT_INPUT_TYPE_NONE )
++    UpdateContextFocusState();
++
+   InputMethodBase::OnTextInputTypeChanged(client);
+   // TODO(yoichio): Support inputmode HTML attribute.
+ }
+@@ -407,7 +414,9 @@
+ void InputMethodAuraLinux::OnDidChangeFocusedClient(
+     TextInputClient* focused_before,
+     TextInputClient* focused) {
+-  UpdateContextFocusState();
++
++  if( GetTextInputType() == TEXT_INPUT_TYPE_NONE )
++    UpdateContextFocusState();
+ 
+   // Force to update caret bounds, in case the View thinks that the caret
+   // bounds has not changed.
+diff -uNr chromium-52.0.2743.76/ui/base/ime/input_method_auralinux.h chromium-52.0.2743.76.2/ui/base/ime/input_method_auralinux.h
+--- chromium-52.0.2743.76/ui/base/ime/input_method_auralinux.h	2016-07-16 00:02:53.000000000 +0200
++++ chromium-52.0.2743.76.2/ui/base/ime/input_method_auralinux.h	2017-06-21 23:29:24.346655575 +0200
+@@ -31,6 +31,7 @@
+                                 NativeEventResult* result) override;
+   void DispatchKeyEvent(ui::KeyEvent* event) override;
+   void OnTextInputTypeChanged(const TextInputClient* client) override;
++  void ShowImeIfNeeded() override;
+   void OnCaretBoundsChanged(const TextInputClient* client) override;
+   void CancelComposition(const TextInputClient* client) override;
+   void OnInputLocaleChanged() override;
