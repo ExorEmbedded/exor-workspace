@@ -43,7 +43,7 @@ IMAGE_INSTALL += "\
 #	gstreamer1.0-plugins-ugly-meta \
 #"
 
-IMAGE_INSTALL += "ibtp"
+#IMAGE_INSTALL += "ibtp"
 
 # These two libraries were automatically installed in dora but not here
 # in krogoth. Add them again by now as they are needed by chromium

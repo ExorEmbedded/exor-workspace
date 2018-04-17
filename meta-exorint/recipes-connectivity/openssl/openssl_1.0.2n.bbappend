@@ -7,3 +7,8 @@ do_install_append () {
     rm -f ${D}${libdir}/ssl/openssl.cnf
     cp ${D}${sysconfdir}/ssl/openssl.cnf ${D}${libdir}/ssl/
 }
+
+do_install_append_class-native () {
+    rm -f ${D}${libdir}/ssl/certs
+    rm -f ${D}${libdir}/ssl/private
+}

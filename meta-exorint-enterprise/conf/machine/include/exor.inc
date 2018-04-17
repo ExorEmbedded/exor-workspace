@@ -7,5 +7,3 @@ UBI_VOLNAME = "rootfs"
 GCCVERSION = "6.3%"
 
 MACHINE_FEATURES = "serial rtc fastboot"
-
-PREFERRED_VERSION_openssl = "1.0.2n"
