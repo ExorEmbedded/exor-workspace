@@ -1,0 +1,21 @@
+diff -uNr chromium-65.0.3325.162/ui/events/devices/x11/touch_factory_x11.cc chromium-65.0.3325.162-2/ui/events/devices/x11/touch_factory_x11.cc
+--- chromium-65.0.3325.162/ui/events/devices/x11/touch_factory_x11.cc	2018-03-13 20:04:53.000000000 +0100
++++ chromium-65.0.3325.162-2/ui/events/devices/x11/touch_factory_x11.cc	2018-06-11 16:58:54.253397377 +0200
+@@ -143,6 +143,17 @@
+       virtual_core_keyboard_device_ = devinfo.deviceid;
+     }
+   }
++
++  std::vector<std::pair<int, EventPointerType>> devices;
++  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
++  AddPointerDevicesFromString(
++      command_line->GetSwitchValueASCII(switches::kTouchDevices),
++      EventPointerType::POINTER_TYPE_TOUCH, &devices);
++  AddPointerDevicesFromString(
++      command_line->GetSwitchValueASCII(switches::kPenDevices),
++      EventPointerType::POINTER_TYPE_PEN, &devices);
++  if (!devices.empty())
++    SetTouchDeviceList(devices);
+ }
+ 
+ bool TouchFactory::ShouldProcessXI2Event(XEvent* xev) {

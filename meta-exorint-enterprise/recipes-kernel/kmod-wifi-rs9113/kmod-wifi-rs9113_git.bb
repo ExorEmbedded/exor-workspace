@@ -77,7 +77,8 @@ FILES_${PN}-reset     = "${sysconfdir}/init.d/networking_reset_${PN}.sh"
 INITSCRIPT_PACKAGES += "${PN} ${PN}-reset"
 INITSCRIPT_NAME_${PN} = "networking_${PN}.sh"
 INITSCRIPT_NAME_${PN}-reset = "networking_reset_${PN}.sh"
-INITSCRIPT_PARAMS_${PN} = "start 28 5 . stop 41 0 6 1 ."
+INITSCRIPT_PARAMS_${PN} = "start 02 5 . stop 41 0 6 1 ."
+INITSCRIPT_PARAMS_${PN}_wu16 = "start 28 5 . stop 41 0 6 1 ."
 INITSCRIPT_PARAMS_${PN}-reset = "start 02 S ."
 
 

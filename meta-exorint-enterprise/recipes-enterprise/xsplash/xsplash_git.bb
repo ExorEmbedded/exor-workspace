@@ -3,9 +3,11 @@ DESCRIPTION = "Xsplash is a small X11 application."
 LICENSE = "Proprietary"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=a26136a158a7bd489efe50329e38188a"
 
-PR = "r10"
+PR = "r13"
 SRCNAME = "ltools-${BPN}"
-SRCREV = "0809c5f74b6acf30aa69eadc71148a337d755286"
+
+SRCBRANCH = "exorint-1.x.x"
+SRCREV = "18fcd263254acb3cc5e0af7dad85ccb59e9e7bb8"
 
 inherit exorint-src
 

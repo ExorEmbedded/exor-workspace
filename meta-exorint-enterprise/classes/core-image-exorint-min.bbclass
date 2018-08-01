@@ -115,6 +115,7 @@ IMAGE_INSTALL += "start-stop-daemon"
 
 # Base x11/vnc support
 IMAGE_INSTALL += "packagegroup-core-x11"
+IMAGE_INSTALL += "xf86-input-evdev"
 IMAGE_INSTALL += "xkbcomp"
 IMAGE_INSTALL += "xserver-xorg-xvfb"
 IMAGE_INSTALL += "xsetroot"

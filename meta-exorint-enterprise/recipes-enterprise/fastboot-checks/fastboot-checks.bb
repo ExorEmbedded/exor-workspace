@@ -10,7 +10,7 @@ SRC_URI += "file://fastboot-prechecks.sh file://fastboot-postchecks.sh file://rc
 
 S = "${WORKDIR}"
 
-PR = "r13"
+PR = "r17"
 
 RDEPENDS_${PN}-prechecks += "bash"
 RDEPENDS_${PN}-postchecks += "bash"

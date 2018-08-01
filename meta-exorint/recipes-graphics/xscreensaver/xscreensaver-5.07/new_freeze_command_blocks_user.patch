@@ -1,0 +1,193 @@
+Index: xscreensaver-5.07/driver/prefs.c
+===================================================================
+--- xscreensaver-5.07.orig/driver/prefs.c
++++ xscreensaver-5.07/driver/prefs.c
+@@ -1575,7 +1575,6 @@ static void
+ stop_the_insanity (saver_preferences *p)
+ {
+   if (p->passwd_timeout <= 0) p->passwd_timeout = 30000;	 /* 30 secs */
+-  if (p->timeout < 15000) p->timeout = 15000;			 /* 15 secs */
+   if (p->cycle != 0 && p->cycle < 2000) p->cycle = 2000;	 /*  2 secs */
+   if (p->pointer_timeout <= 0) p->pointer_timeout = 5000;	 /*  5 secs */
+   if (p->notice_events_timeout <= 0)
+Index: xscreensaver-5.07/driver/xscreensaver.c
+===================================================================
+--- xscreensaver-5.07.orig/driver/xscreensaver.c
++++ xscreensaver-5.07/driver/xscreensaver.c
+@@ -228,7 +228,7 @@ XrmDatabase db = 0;
+ 
+ 
+ static Atom XA_SCREENSAVER_RESPONSE;
+-static Atom XA_ACTIVATE, XA_DEACTIVATE, XA_CYCLE, XA_NEXT, XA_PREV;
++static Atom XA_ACTIVATE, XA_FREEZE, XA_DEACTIVATE, XA_CYCLE, XA_NEXT, XA_PREV;
+ static Atom XA_RESTART, XA_SELECT;
+ static Atom XA_THROTTLE, XA_UNTHROTTLE;
+ Atom XA_DEMO, XA_PREFS, XA_EXIT, XA_LOCK, XA_BLANK;
+@@ -631,6 +631,7 @@ connect_to_server (saver_info *si, int *
+   XA_ESETROOT_PMAP_ID = XInternAtom (si->dpy, "ESETROOT_PMAP_ID", False);
+   XA_XROOTPMAP_ID = XInternAtom (si->dpy, "_XROOTPMAP_ID", False);
+   XA_ACTIVATE = XInternAtom (si->dpy, "ACTIVATE", False);
++  XA_FREEZE = XInternAtom (si->dpy, "FREEZE", False);
+   XA_DEACTIVATE = XInternAtom (si->dpy, "DEACTIVATE", False);
+   XA_RESTART = XInternAtom (si->dpy, "RESTART", False);
+   XA_CYCLE = XInternAtom (si->dpy, "CYCLE", False);
+@@ -1159,7 +1160,7 @@ main_loop (saver_info *si)
+              60 seconds.)
+           */
+           Time retry = 60 * 1000;
+-          if (p->timeout < retry)
++          if (p->timeout && p->timeout < retry)
+             retry = p->timeout;
+ 
+           if (p->debug_p)
+@@ -1371,6 +1372,8 @@ main (int argc, char **argv)
+   si->auth_finished_cb = auth_finished_cb;
+ # endif /* !NO_LOCKING */
+ 
++  si->freeze_p = False;
++
+   shell = connect_to_server (si, &argc, argv);
+   process_command_line (si, &argc, argv);
+   stderr_log_file (si);
+@@ -1639,7 +1642,7 @@ handle_clientmessage (saver_info *si, XE
+     }
+ 
+   type = event->xclient.data.l[0];
+-  if (type == XA_ACTIVATE)
++  if (type == XA_ACTIVATE || type == XA_FREEZE)
+     {
+       if (until_idle_p)
+ 	{
+@@ -1652,7 +1655,7 @@ handle_clientmessage (saver_info *si, XE
+             }
+ 
+ 	  clientmessage_response(si, window, False,
+-				 "ACTIVATE ClientMessage received.",
++				 type == XA_ACTIVATE ? "ACTIVATE ClientMessage received." : "FREEZE ClientMessage received.",
+ 				 "activating.");
+ 	  si->selection_mode = 0;
+ 	  si->demoing_p = False;
+@@ -1660,6 +1663,7 @@ handle_clientmessage (saver_info *si, XE
+           if (si->throttled_p && p->verbose_p)
+             fprintf (stderr, "%s: unthrottled.\n", blurb());
+ 	  si->throttled_p = False;
++	  si->freeze_p = (type == XA_FREEZE);
+ 
+ 	  if (si->using_mit_saver_extension || si->using_sgi_saver_extension)
+ 	    {
+@@ -1674,6 +1678,8 @@ handle_clientmessage (saver_info *si, XE
+       clientmessage_response(si, window, True,
+ 		       "ClientMessage ACTIVATE received while already active.",
+ 			     "already active.");
++      // make sure we unfreeze if activated
++      si->freeze_p = (type == XA_FREEZE);
+     }
+   else if (type == XA_DEACTIVATE)
+     {
+@@ -1682,6 +1688,7 @@ handle_clientmessage (saver_info *si, XE
+           if (si->throttled_p && p->verbose_p)
+             fprintf (stderr, "%s: unthrottled.\n", blurb());
+ 	  si->throttled_p = False;
++	  si->freeze_p = False;
+ 
+ 	  clientmessage_response(si, window, False,
+ 				 "DEACTIVATE ClientMessage received.",
+Index: xscreensaver-5.07/driver/timers.c
+===================================================================
+--- xscreensaver-5.07.orig/driver/timers.c
++++ xscreensaver-5.07/driver/timers.c
+@@ -716,6 +716,12 @@ sleep_until_idle (saver_info *si, Bool u
+ 
+       switch (event.xany.type) {
+       case 0:		/* our synthetic "timeout" event has been signalled */
++        if (!p->timeout)
++          {
++            if (p->debug_p)
++              fprintf (stderr, "%s: timeout not set - doing nothing\n", blurb());
++            continue;
++          }
+ 	if (until_idle_p)
+ 	  {
+ 	    Time idle;
+@@ -776,7 +782,7 @@ sleep_until_idle (saver_info *si, Bool u
+ 		idle = 1000 * (si->last_activity_time - time ((time_t *) 0));
+ 	      }
+ 
+-	    if (idle >= p->timeout)
++	    if (p->timeout && idle >= p->timeout)
+               {
+                 /* Look, we've been idle long enough.  We're done. */
+                 goto DONE;
+@@ -796,7 +802,7 @@ sleep_until_idle (saver_info *si, Bool u
+                    go off in 3 minutes.
+                  */
+                 if (polling_for_idleness)
+-                  schedule_wakeup_event (si, p->timeout - idle, p->debug_p);
++                  schedule_wakeup_event (si, (!p->timeout ? 0 : p->timeout - idle), p->debug_p);
+               }
+ 	  }
+ 	break;
+@@ -822,6 +828,13 @@ sleep_until_idle (saver_info *si, Bool u
+       case ButtonRelease:
+       case MotionNotify:
+ 
++        if (si->freeze_p)
++          {
++	    if (p->debug_p)
++              fprintf (stderr,"%s: freeze mode - ignoring user event\n", blurb());
++            break;
++          }
++
+ 	if (p->debug_p)
+ 	  {
+             Window root=0, window=0;
+Index: xscreensaver-5.07/driver/xscreensaver-command.c
+===================================================================
+--- xscreensaver-5.07.orig/driver/xscreensaver-command.c
++++ xscreensaver-5.07/driver/xscreensaver-command.c
+@@ -52,7 +52,7 @@ Atom XA_VROOT;
+ Atom XA_SCREENSAVER, XA_SCREENSAVER_VERSION, XA_SCREENSAVER_RESPONSE;
+ Atom XA_SCREENSAVER_ID, XA_SCREENSAVER_STATUS, XA_SELECT, XA_DEMO, XA_EXIT;
+ Atom XA_BLANK, XA_LOCK;
+-static Atom XA_ACTIVATE, XA_DEACTIVATE, XA_CYCLE, XA_NEXT, XA_PREV;
++static Atom XA_ACTIVATE, XA_FREEZE, XA_DEACTIVATE, XA_CYCLE, XA_NEXT, XA_PREV;
+ static Atom XA_RESTART, XA_PREFS, XA_THROTTLE, XA_UNTHROTTLE;
+ 
+ static char *screensaver_version;
+@@ -80,6 +80,8 @@ usage: %s -<option>\n\
+   -activate     Turn on the screensaver (blank the screen), as if the user\n\
+                 had been idle for long enough.\n\
+ \n\
++  -freeze       Same as -activate, but permanent (user events don't unlock it)\n\
++\n\
+   -deactivate   Turns off the screensaver (un-blank the screen), as if user\n\
+                 activity had been detected.\n\
+ \n\
+@@ -179,6 +181,7 @@ main (int argc, char **argv)
+       if (!strncmp (s, "-display", L))		dpyname = argv [++i];
+       else if (cmd) USAGE();
+       else if (!strncmp (s, "-activate", L))   cmd = &XA_ACTIVATE;
++      else if (!strncmp (s, "-freeze", L))     cmd = &XA_FREEZE;
+       else if (!strncmp (s, "-deactivate", L)) cmd = &XA_DEACTIVATE;
+       else if (!strncmp (s, "-cycle", L))      cmd = &XA_CYCLE;
+       else if (!strncmp (s, "-next", L))       cmd = &XA_NEXT;
+@@ -292,6 +295,7 @@ main (int argc, char **argv)
+   XA_SCREENSAVER_STATUS = XInternAtom (dpy, "_SCREENSAVER_STATUS", False);
+   XA_SCREENSAVER_RESPONSE = XInternAtom (dpy, "_SCREENSAVER_RESPONSE", False);
+   XA_ACTIVATE = XInternAtom (dpy, "ACTIVATE", False);
++  XA_FREEZE = XInternAtom (dpy, "FREEZE", False);
+   XA_DEACTIVATE = XInternAtom (dpy, "DEACTIVATE", False);
+   XA_RESTART = XInternAtom (dpy, "RESTART", False);
+   XA_CYCLE = XInternAtom (dpy, "CYCLE", False);
+Index: xscreensaver-5.07/driver/types.h
+===================================================================
+--- xscreensaver-5.07.orig/driver/types.h
++++ xscreensaver-5.07/driver/types.h
+@@ -208,6 +208,7 @@ struct saver_info {
+   time_t blank_time;		/* The time at which the screen was blanked
+                                    (if currently blanked) or unblanked (if
+                                    not blanked.) */
++  Bool freeze_p;                /* Whether to freeze screensaver */
+ 
+ 
+   /* =======================================================================

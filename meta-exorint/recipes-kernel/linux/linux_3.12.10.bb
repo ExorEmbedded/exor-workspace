@@ -7,8 +7,8 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/linux-${LINUX_VERSION}:"
 
 SRCNAME = "lke"
 
-SRCBRANCH = "ti-linux-3.12.y"
-SRCREV = "2829b79a24112cf94ed7846ee58d06f95434e3a8"
+SRCBRANCH = "ti-linux-3.12.y_RT"
+SRCREV = "aba3c17659ea1fe17589b0ab37b1c6743f405ba4"
 
 SRCBRANCH_ca16 = "ti-linux-3.12.y_pgd_ca"
 SRCREV_ca16 = "8864dc0463b9d4dc697e24c1e2f910c9f445655f"
@@ -18,14 +18,6 @@ SRCREV_wu16 = "1593cf325cd0dd98b973277cf608857afce1c236"
 
 SRCBRANCH_au16 = "ti-linux-3.12.y_au"
 SRCREV_au16 = "2cbe4c5a86d7f6a1429d17d7cde498953a153a54"
-
-SRCBRANCH_na16 = "ti-linux-3.12.y_na16"
-SRCREV_na16 = "e8e42011c41662d0e6f592e63add45523999be4d"
-
-SRC_URI_append = "\
-    file://0001-Added-compiler-gcc6.h.patch \
-    file://0003-change-extern-inline-to-static-inline-in-glue-cache.patch \
-"
 
 LINUX_VERSION = "3.12"
 
@@ -52,3 +44,8 @@ KERNEL_DEVICETREE_beaglebone = "\
 "
 
 require linux.inc
+
+SRC_URI += "file://0001-change-extern-inline-to-static-inline-in-glue-cache.patch \
+	file://0002-Add-compiler-gcc6.h.patch \
+	file://0003-Add-compiler-gcc7.h.patch \
+"

@@ -1,4 +1,4 @@
-PR := "${PR}.x5"
+PR := "${PR}.x6"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 

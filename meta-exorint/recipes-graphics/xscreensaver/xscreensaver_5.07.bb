@@ -1,14 +1,16 @@
 require xscreensaver.inc
-PR = "${INC_PR}.0"
+PR = "${INC_PR}.3"
 
 SRC_URI = "http://www.jwz.org/xscreensaver/xscreensaver-${PV}.tar.gz \
            file://configure.in.patch \
+           file://fix_minixpm_compile.patch \
            file://glfix.patch \
            file://initFile.patch \
            file://remote.patch \
            file://deactivate_on_release.patch \
            file://disable_screen_blank.patch \
            file://run_as_admin.patch \
+           file://new_freeze_command_blocks_user.patch \
            file://XScreenSaver"
 
 SRC_URI[md5sum] = "55a12fcb5d3a7231c9850ef9d9f82918"

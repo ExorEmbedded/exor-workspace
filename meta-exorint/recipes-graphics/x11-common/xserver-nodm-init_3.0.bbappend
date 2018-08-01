@@ -13,7 +13,6 @@ do_install_append () {
 }
 
 do_install_append_usom03 () {
-
     # Disable cursor causing graphical glitches with vivante gpu
     sed -i'' 's:ARGS="\(.*\)":ARGS="-nocursor \1":' ${D}${sysconfdir}/default/xserver-nodm
 

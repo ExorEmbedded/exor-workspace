@@ -7,7 +7,7 @@ COMPATIBLE_MACHINE = "usom03"
 
 SRCNAME = "uboot"
 SRCBRANCH = "uboot2014.04_uS01"
-SRCREV = "9bb7cbd5fecacfd8794ee47c7cd700de00ac5e3a"
+SRCREV = "a0787838c5a33c130fa6525bb4c0ee3e7f9f27d3"
 SRC_URI = "git://github.com/ExorEmbedded/uboot-us01.git;branch=${SRCBRANCH}"
 
 S = "${WORKDIR}/git"
@@ -15,7 +15,9 @@ S = "${WORKDIR}/git"
 inherit exorint-src
 require ../u-boot.inc
 
-SRC_URI += "file://fix-build-error-under-gcc6.patch"
+SRC_URI += "file://fix-build-error-under-gcc6.patch \
+            file://Add-linux-compiler-gcc7.h-to-fix-builds-with-gcc7.patch"
+
 SRC_URI_append_usom03 = " file://fw_env_us03.config"
 
 do_install_append_usom03 () {

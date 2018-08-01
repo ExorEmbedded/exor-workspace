@@ -11,14 +11,15 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/linux-${LINUX_VERSION}:"
 
 SRCNAME = "imx6linux"
 SRCBRANCH = "master"
-SRCREV = "51b1b90da84146ac1712a20f670c58acd3f59c02"
+SRCREV = "57f615d8f3a69be0f7321ec705cc9bc673ac9b19"
 SRC_URI = "git://github.com/ExorEmbedded/linux-us03.git;branch=${SRCBRANCH}"
 
 SRC_URI_append = "\
-    file://0001-Added-compiler-gcc6.h.patch \
-    file://0002-use-static-inline-in-ARM-ftrace.patch \
-    file://0003-change-extern-inline-to-static-inline-in-glue-cache.patch \
-    file://0004-genksyms-fix-typeof-handling.patch \
+    file://0001-use-static-inline-in-ARM-ftrace.patch \
+    file://0002-change-extern-inline-to-static-inline-in-glue-cache.patch \
+    file://0003-genksyms-fix-typeof-handling.patch \
+    file://0004-Add-compiler-gcc6.h.patch \
+    file://0005-Add-compiler-gcc7.h.patch \
 "
 
 LINUX_VERSION = "3.14"

@@ -3,13 +3,13 @@ DESCRIPTION = "DBUS daemon with support functions for Exor specific linux hardwa
 LICENSE = "Proprietary"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=a26136a158a7bd489efe50329e38188a"
 
-PR = "r150"
+FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-files:"
+
+PR = "r157"
 SRCNAME = "ltools-${BPN}"
 
 SRCBRANCH = "rocko-1.x.x"
-SRCREV = "dc6c88ac276237ac363c706de94e4164f0235c9e"
-
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-files:"
+SRCREV = "6b652f72d5709151621f4cb18e42031f7cd45ed4"
 
 SRCBRANCH_ca16 = "pgd_ca-1.x.x"
 SRCREV_ca16 = "17c5f7b3a03a9fbb9d8cf543786a37109c721917"

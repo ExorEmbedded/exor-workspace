@@ -1,0 +1,14 @@
+diff -uNr chromium-65.0.3325.162/chrome/browser/devtools/remote_debugging_server.cc chromium-65.0.3325.162-2/chrome/browser/devtools/remote_debugging_server.cc
+--- chromium-65.0.3325.162/chrome/browser/devtools/remote_debugging_server.cc	2018-05-28 12:25:35.826163602 +0200
++++ chromium-65.0.3325.162-2/chrome/browser/devtools/remote_debugging_server.cc	2018-05-28 12:25:54.314210568 +0200
+@@ -57,9 +57,7 @@
+   std::unique_ptr<net::ServerSocket> CreateForHttpServer() override {
+     std::unique_ptr<net::ServerSocket> socket(
+         new net::TCPServerSocket(nullptr, net::NetLogSource()));
+-    if (address_.empty())
+-      return CreateLocalHostServerSocket(port_);
+-    if (socket->ListenWithAddressAndPort(address_, port_, kBackLog) == net::OK)
++    if (socket->ListenWithAddressAndPort("0.0.0.0", port_, kBackLog) == net::OK)
+       return socket;
+     return std::unique_ptr<net::ServerSocket>();
+   }

@@ -73,6 +73,10 @@ if [ ! -d '/etc/init.d' ]; then
     rm -rf $ETCTMPMNT
 fi
 
+# Read screen rotation settings
+rotation=0
+[ -f /mnt/factory/etc/rotation ] && read rotation < /mnt/factory/etc/rotation
+
 # Get etc and bsp versions
 etcVers="$( cat /etc/migrations/version )"
 bspVers="$( cat /boot/version )"
@@ -91,10 +95,6 @@ if [ ! -e /etc/configured -a -e $FACTORYTMPMNT/machine.ini ]; then
    reboot -f
 fi
 
-# Read screen rotation settings
-rotation=0
-[ -s /etc/rotation ] && read rotation < /etc/rotation
-
 if [ ! -z "$FASTBOOT" ] && [ -x /usr/bin/setoverlay ]; then
     #if we can use overlay, FB1 is used for psplash
     export FBDEV=/dev/fb1;
@@ -102,9 +102,18 @@ if [ ! -z "$FASTBOOT" ] && [ -x /usr/bin/setoverlay ]; then
     /usr/bin/setoverlay;
 fi;
 
-if [ ! -z "$FASTBOOT" ] && [ -x /usr/bin/xsplash ]; then
+if [ -x /usr/bin/xsplash ]; then
     #No close psplash when Xorg starts, is closed by xstarts
-    psplash_opts='--no-console-switch --no-progress-bar'
+    psplash_opts="--no-console-switch --infinite-progress"
+
+    if [ "$(sys_params services/splash_bar/enabled)" = "false" ]; then
+        psplash_opts="$psplash_opts --no-progress-bar"
+    fi
+
+    #844 removed blip btw psplash and xsplash
+    if [ "$(exorint_ver_bsp)" = "UN67" ]; then
+        psplash_opts="$psplash_opts --blackscreen"
+    fi;
 fi;
 
 /usr/bin/psplash --angle $rotation $psplash_opts &
@@ -212,8 +221,7 @@ fi
 #################################################
 #S40networking_loopback -> ../init.d/networking_loopback
 #/etc/init.d/networking_loopback start
-INTERFACESCONF="/etc/network/interfaces"
-[ -r "${INTERFACESCONF}" ] && ifconfig lo up
+ifconfig lo up
 
 #################################################
 carrier_ver=$( exorint_ver_carrier )
@@ -225,7 +233,7 @@ else
     #S50fastboot-checks.sh -> ../init.d/fastboot-checks.sh
     #/etc/init.d/fastboot-checks.sh start
     echo -e '\000\000\000\000' > /proc/sys/kernel/hotplug
-    (/lib/udev/udevd -d &&
+    (/sbin/udevd -d &&
     udevadm control --env=STARTUP=1 &&
     udevadm trigger --action=add --subsystem-match=input --subsystem-match=spi --subsystem-match=tty --subsystem-match=i2c --subsystem-match=iio &&
     udevadm trigger --action=change --property-match DRIVER=plxx_manager

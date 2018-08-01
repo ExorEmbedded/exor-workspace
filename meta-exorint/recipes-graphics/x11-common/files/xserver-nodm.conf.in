@@ -1,7 +1,13 @@
-# common environment file for sysvinit and systemd
+. /etc/exorint.funcs
 
-XSERVER=/usr/bin/Xorg
+if [ "$(exorint_ver_type)" = "ROUTER" -o ! -e /dev/fb0 ]; then
+	XSERVER=/usr/bin/Xvfb
+	ARGS="-screen scrn 1024x600x16"
+else
+	XSERVER=/usr/bin/Xorg
+fi
+
 DISPLAY=:0
-ARGS="-nolisten tcp -br -pn"
+ARGS="$ARGS -nolisten tcp -br -pn"
 HOME=/home/root
 USER=root

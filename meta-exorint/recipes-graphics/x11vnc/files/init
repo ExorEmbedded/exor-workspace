@@ -15,7 +15,7 @@ X11VNC_SWFLAG_OFFSET=6
 if test -f /etc/default/${NAME}; then
     . /etc/default/${NAME}
 fi
-X11VNC_OPTS="-noxinerama -rc ${CONF} -o ${LOG} ${X11VNC_OPTS}"
+X11VNC_OPTS="-noxinerama -bg -rc ${CONF} -o ${LOG} ${X11VNC_OPTS}"
 
 die()
 {

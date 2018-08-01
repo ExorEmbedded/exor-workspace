@@ -1,5 +1,5 @@
 timeout: 0:00:00
-mode: off
+mode: blank
 fade: False
 unfade: False
-programs: /usr/bin/xset dpms force off
+programs: /usr/bin/xscreensaver-trigger

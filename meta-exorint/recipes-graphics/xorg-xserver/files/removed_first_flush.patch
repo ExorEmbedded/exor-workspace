@@ -1,29 +1,30 @@
---- a/os/WaitFor.c	2012-06-28 19:06:18.000000000 +0200
-+++ b/os/WaitFor.c	2017-05-29 17:55:08.911946249 +0200
-@@ -140,7 +140,7 @@
-  *     For more info on ClientsWithInput, see ReadRequestFromClient().
+diff -uNr xorg-server-1.19.3-2/os/WaitFor.c xorg-server-1.19.3/os/WaitFor.c
+--- xorg-server-1.19.3-2/os/WaitFor.c	2018-02-20 12:50:16.779995672 +0100
++++ xorg-server-1.19.3/os/WaitFor.c	2018-02-20 12:51:51.265099360 +0100
+@@ -180,6 +180,8 @@
   *     pClientsReady is an array to store ready client->index values into.
   *****************/
--
+ 
 +static int first_run = 0;
- int
- WaitForSomething(int *pClientsReady)
++
+ Bool
+ WaitForSomething(Bool are_ready)
  {
-@@ -206,10 +206,13 @@
-             }
-             XFD_COPYSET(&AllSockets, &LastSelectMask);
-         }
--
--        BlockHandler((pointer) &wt, (pointer) &LastSelectMask);
+@@ -216,9 +218,14 @@
+         else
+             timeout = check_timers();
+ 
+-        BlockHandler(&timeout);
 -        if (NewOutputPending)
 -            FlushAllOutput();
 +        if(first_run > 1){
 +            first_run++;
 +        } else {
-+            BlockHandler((pointer) &wt, (pointer) &LastSelectMask);
++            BlockHandler(&timeout);
 +            if (NewOutputPending)
 +                FlushAllOutput();
 +        }
++
          /* keep this check close to select() call to minimize race */
          if (dispatchException)
              i = -1;

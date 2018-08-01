@@ -99,8 +99,8 @@ SUBSYSTEM=="backlight", RUN+="/bin/chgrp video /sys/class/backlight/%k/brightnes
 # Mouse
 #
 
-KERNEL=="mouse[1-9]", ACTION=="add",  RUN+="/etc/udev/scripts/mouse.sh"
-KERNEL=="mouse[1-9]", ACTION=="remove",  RUN+="/etc/udev/scripts/mouse.sh"
+KERNEL=="mouse[0-9]", ACTION=="add",  RUN+="/etc/udev/scripts/mouse.sh"
+KERNEL=="mouse[0-9]", ACTION=="remove",  RUN+="/etc/udev/scripts/mouse.sh"
 
 # Create symlinks for uart ports
 KERNEL=="ttyUSB0", SUBSYSTEM=="tty", SYMLINK="com10"

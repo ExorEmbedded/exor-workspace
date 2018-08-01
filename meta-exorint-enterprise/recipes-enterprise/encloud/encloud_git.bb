@@ -1,10 +1,10 @@
 DESCRIPTION = "Cloud Enabler Service"
 
-LICENSE = "Proprietary"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=dc68c1fcebd31509ab35c671efe98470"
+LICENSE = "MIT"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=4144008b4d33581741e1e9db045c9be4"
 
-PR = "x7"
-SRCREV = "593b464a9ecb7de0596ee061bd5f84398ab6bc5c"
+PR = "x9"
+SRCREV = "bc8b98e9011cd8885bc4ea2d04264fe18f80ddd6"
 SRCBRANCH = "exorint-1.x.x"
 SRC_URI = "git://github.com/ExorEmbedded/encloud.git;branch=${SRCBRANCH}"
 

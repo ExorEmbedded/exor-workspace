@@ -5,10 +5,10 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=a26136a158a7bd489efe50329e38188a"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
-PR = "r132"
+PR = "r143"
 SRCNAME = "yocto-base"
 SRCBRANCH = "rocko-1.x.x"
-SRCREV = "d22f48d26bc122f158ae1359a20c0144c256cb98"
+SRCREV = "918ed25c2b0bff36207c03a6791780b2bb962e7a"
 SRC_URI = "git://github.com/ExorEmbedded/yocto-base.git;branch=${SRCBRANCH}"
 
 inherit autotools

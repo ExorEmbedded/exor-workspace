@@ -1,0 +1,26 @@
+Index: xscreensaver-5.07/hacks/Makefile.in
+===================================================================
+--- xscreensaver-5.07.orig/hacks/Makefile.in
++++ xscreensaver-5.07/hacks/Makefile.in
+@@ -541,7 +541,7 @@ $(UTIL_OBJS):
+ screenhack.o: $(UTILS_SRC)/version.h
+ 
+ # Some abbreviations to keep the lines short...
+-XPM		= xpm-pixmap.o
++XPM		= xpm-pixmap.o $(MINIXPM)
+ ALP		= $(UTILS_BIN)/alpha.o
+ HSV		= $(UTILS_BIN)/hsv.o
+ SPL		= $(UTILS_BIN)/spline.o
+Index: xscreensaver-5.07/hacks/glx/Makefile.in
+===================================================================
+--- xscreensaver-5.07.orig/hacks/glx/Makefile.in
++++ xscreensaver-5.07/hacks/glx/Makefile.in
+@@ -168,7 +168,7 @@ HACK_OBJS	= $(HACK_BIN)/screenhack.o $(H
+ 		  $(UTILS_BIN)/resources.o $(UTILS_BIN)/visual.o \
+ 		  $(UTILS_BIN)/visual-gl.o $(UTILS_BIN)/usleep.o \
+ 		  $(UTILS_BIN)/yarandom.o $(UTILS_BIN)/hsv.o \
+-		  $(UTILS_BIN)/colors.o
++		  $(UTILS_BIN)/colors.o $(MINIXPM)
+ 
+ HDRS		= atlantis.h bubble3d.h buildlwo.h e_textures.h xpm-ximage.h \
+ 		  grab-ximage.h font-ximage.h tube.h sphere.h boxed.h \

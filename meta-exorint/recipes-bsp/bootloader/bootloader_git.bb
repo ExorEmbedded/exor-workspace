@@ -8,7 +8,7 @@ COMPATIBLE_MACHINE = "(usom01|usom02)"
 
 SRCNAME = "uboot"
 SRCBRANCH = "uboot2014.04_uS01"
-SRCREV = "9bb7cbd5fecacfd8794ee47c7cd700de00ac5e3a"
+SRCREV = "a0787838c5a33c130fa6525bb4c0ee3e7f9f27d3"
 
 SRCBRANCH_ca16 = "uboot2014.04_uS01PGD_CA"
 SRCREV_ca16 = "1d5794ab082f18b587fb3091c968ede509a50e94"
@@ -23,7 +23,9 @@ SRCREV_usom02 = "057343b8493f7997e09a8e52c71e78502c963800"
 inherit exorint-src
 require ../u-boot.inc
 
-SRC_URI += "file://fix-build-error-under-gcc6.patch"
+SRC_URI += "file://fix-build-error-under-gcc6.patch \
+	file://Add-linux-compiler-gcc7.h-to-fix-builds-with-gcc7.patch \
+"
 SRC_URI_append_usom01 = " file://fw_env_us01.config"
 
 do_install_append_usom01 () {
@@ -35,3 +37,5 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 
 UBOOT_ONLY = "1"
 UBOOT_SUFFIX = "img"
+
+INSANE_SKIP_${PN}-env += "ldflags"

@@ -52,6 +52,7 @@ start_it_up()
     PIDDIR=/proc/$(cat $PIDFILE)
     if [ -d ${PIDDIR} -a  "$(readlink -f ${PIDDIR}/exe)" = "${DAEMON}" ]; then 
       echo "$DESC already started; not starting."
+      return
     else
       echo "Removing stale PID file $PIDFILE."
       rm -f $PIDFILE
