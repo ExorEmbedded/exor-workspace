@@ -1,7 +1,6 @@
-Binary files chromium-64.0.3282.140-2/chrome/browser/resources/protobufs/binary_proto_generator.pyc and chromium-64.0.3282.140/chrome/browser/resources/protobufs/binary_proto_generator.pyc differ
-diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/appearance_page/appearance_page.html chromium-64.0.3282.140/chrome/browser/resources/settings/appearance_page/appearance_page.html
---- chromium-64.0.3282.140-2/chrome/browser/resources/settings/appearance_page/appearance_page.html	2018-02-15 10:16:03.705755564 +0100
-+++ chromium-64.0.3282.140/chrome/browser/resources/settings/appearance_page/appearance_page.html	2018-02-14 11:32:09.706015323 +0100
+diff -uNr chromium-65.0.3325.162.orig/chrome/browser/resources/settings/appearance_page/appearance_page.html chromium-65.0.3325.162/chrome/browser/resources/settings/appearance_page/appearance_page.html
+--- chromium-65.0.3325.162.orig/chrome/browser/resources/settings/appearance_page/appearance_page.html	2018-10-26 14:53:03.969672071 +0200
++++ chromium-65.0.3325.162/chrome/browser/resources/settings/appearance_page/appearance_page.html	2018-10-26 09:14:32.981444898 +0200
 @@ -71,12 +71,14 @@
          </button>
          <div class="hr"></div>
@@ -34,9 +33,9 @@ diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/appearance_
          <div class="settings-box">
            <div class="start">$i18n{fontSize}</div>
            <settings-dropdown-menu id="defaultFontSize" label="$i18n{fontSize}"
-diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/basic_page/basic_page.html chromium-64.0.3282.140/chrome/browser/resources/settings/basic_page/basic_page.html
---- chromium-64.0.3282.140-2/chrome/browser/resources/settings/basic_page/basic_page.html	2018-02-15 10:16:01.701732969 +0100
-+++ chromium-64.0.3282.140/chrome/browser/resources/settings/basic_page/basic_page.html	2018-02-15 11:46:20.560437191 +0100
+diff -uNr chromium-65.0.3325.162.orig/chrome/browser/resources/settings/basic_page/basic_page.html chromium-65.0.3325.162/chrome/browser/resources/settings/basic_page/basic_page.html
+--- chromium-65.0.3325.162.orig/chrome/browser/resources/settings/basic_page/basic_page.html	2018-10-26 14:53:04.409677349 +0200
++++ chromium-65.0.3325.162/chrome/browser/resources/settings/basic_page/basic_page.html	2018-10-26 09:14:32.981444898 +0200
 @@ -106,6 +106,17 @@
            <div class="flex">$i18n{secondaryUserBannerText}</div>
          </div>
@@ -150,9 +149,9 @@ diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/basic_page/
                restamp>
              <settings-section page-title="$i18n{systemPageTitle}"
                  section="system">
-diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/controls/settings_toggle_button.html chromium-64.0.3282.140/chrome/browser/resources/settings/controls/settings_toggle_button.html
---- chromium-64.0.3282.140-2/chrome/browser/resources/settings/controls/settings_toggle_button.html	2018-02-15 10:16:02.529742305 +0100
-+++ chromium-64.0.3282.140/chrome/browser/resources/settings/controls/settings_toggle_button.html	2018-02-15 12:08:45.583196890 +0100
+diff -uNr chromium-65.0.3325.162.orig/chrome/browser/resources/settings/controls/settings_toggle_button.html chromium-65.0.3325.162/chrome/browser/resources/settings/controls/settings_toggle_button.html
+--- chromium-65.0.3325.162.orig/chrome/browser/resources/settings/controls/settings_toggle_button.html	2018-10-26 14:53:04.785681859 +0200
++++ chromium-65.0.3325.162/chrome/browser/resources/settings/controls/settings_toggle_button.html	2018-10-26 09:14:32.985444895 +0200
 @@ -66,7 +66,8 @@
            on-change="onChange_"
            aria-label$="[[getAriaLabel_(label, ariaLabel)]]"
@@ -163,9 +162,9 @@ diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/controls/se
        </cr-toggle>
      </div>
    </template>
-diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/controls/settings_toggle_button.js chromium-64.0.3282.140/chrome/browser/resources/settings/controls/settings_toggle_button.js
---- chromium-64.0.3282.140-2/chrome/browser/resources/settings/controls/settings_toggle_button.js	2018-02-15 10:16:02.465741584 +0100
-+++ chromium-64.0.3282.140/chrome/browser/resources/settings/controls/settings_toggle_button.js	2018-02-15 12:11:48.945247689 +0100
+diff -uNr chromium-65.0.3325.162.orig/chrome/browser/resources/settings/controls/settings_toggle_button.js chromium-65.0.3325.162/chrome/browser/resources/settings/controls/settings_toggle_button.js
+--- chromium-65.0.3325.162.orig/chrome/browser/resources/settings/controls/settings_toggle_button.js	2018-10-26 14:53:05.193686752 +0200
++++ chromium-65.0.3325.162/chrome/browser/resources/settings/controls/settings_toggle_button.js	2018-10-26 09:14:32.985444895 +0200
 @@ -58,6 +58,14 @@
      return this.label || this.ariaLabel;
    },
@@ -181,16 +180,18 @@ diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/controls/se
    /** @private */
    onDisableOrPrefChange_: function() {
      if (this.controlDisabled_()) {
-diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/on_startup_page/on_startup_page.html chromium-64.0.3282.140/chrome/browser/resources/settings/on_startup_page/on_startup_page.html
---- chromium-64.0.3282.140-2/chrome/browser/resources/settings/on_startup_page/on_startup_page.html	2018-02-15 10:16:02.781745147 +0100
-+++ chromium-64.0.3282.140/chrome/browser/resources/settings/on_startup_page/on_startup_page.html	2018-02-14 14:37:02.457669168 +0100
-@@ -19,12 +19,12 @@
+diff -uNr chromium-65.0.3325.162.orig/chrome/browser/resources/settings/on_startup_page/on_startup_page.html chromium-65.0.3325.162/chrome/browser/resources/settings/on_startup_page/on_startup_page.html
+--- chromium-65.0.3325.162.orig/chrome/browser/resources/settings/on_startup_page/on_startup_page.html	2018-10-26 14:53:05.617691837 +0200
++++ chromium-65.0.3325.162/chrome/browser/resources/settings/on_startup_page/on_startup_page.html	2018-10-26 11:58:57.924038052 +0200
+@@ -18,13 +18,12 @@
+     <div class="settings-box block first">
        <settings-radio-group id="onStartupRadioGroup"
            pref="{{prefs.session.restore_on_startup}}">
-         <controlled-radio-button name="[[prefValues_.OPEN_NEW_TAB]]"
-+            id="ext_startupOpenSettings"
-             pref="[[prefs.session.restore_on_startup]]"
+-        <controlled-radio-button name="[[prefValues_.OPEN_NEW_TAB]]"
+-            pref="[[prefs.session.restore_on_startup]]"
 -            label="$i18n{onStartupOpenNewTab}"
++        <controlled-radio-button name="[[prefValues_.CUS]]"
++            id="ext_startupOpenSettings"
 +            label="Open Settings"
              no-extension-indicator>
          </controlled-radio-button>
@@ -200,18 +201,21 @@ diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/on_startup_
            <extension-controlled-indicator
                extension-id="[[ntpExtension_.id]]"
                extension-name="[[ntpExtension_.name]]"
-@@ -33,17 +33,19 @@
+@@ -32,18 +31,18 @@
+               on-extension-disable="getNtpExtension_">
            </extension-controlled-indicator>
          </template>
-         <controlled-radio-button name="[[prefValues_.CONTINUE]]"
+-        <controlled-radio-button name="[[prefValues_.CONTINUE]]"
+-            pref="[[prefs.session.restore_on_startup]]"
++        <controlled-radio-button name="[[prefValues_.CUS]]"
 +            id="ext_startupContinue"
-             pref="[[prefs.session.restore_on_startup]]"
              label="$i18n{onStartupContinue}">
          </controlled-radio-button>
-         <controlled-radio-button name="[[prefValues_.OPEN_SPECIFIC]]"
-+            id="ext_startupOpenHomepage"
-             pref="[[prefs.session.restore_on_startup]]"
+-        <controlled-radio-button name="[[prefValues_.OPEN_SPECIFIC]]"
+-            pref="[[prefs.session.restore_on_startup]]"
 -            label="$i18n{onStartupOpenSpecific}">
++        <controlled-radio-button name="[[prefValues_.CUS]]"
++            id="ext_startupOpenHomepage"
 +            label="Open Homepage">
          </controlled-radio-button>
        </settings-radio-group>
@@ -222,9 +226,65 @@ diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/on_startup_
        <settings-startup-urls-page prefs="[[prefs]]">
        </settings-startup-urls-page>
      </template>
-diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/on_startup_page/startup_urls_page.html chromium-64.0.3282.140/chrome/browser/resources/settings/on_startup_page/startup_urls_page.html
---- chromium-64.0.3282.140-2/chrome/browser/resources/settings/on_startup_page/startup_urls_page.html	2018-02-15 10:16:02.789745236 +0100
-+++ chromium-64.0.3282.140/chrome/browser/resources/settings/on_startup_page/startup_urls_page.html	2018-02-14 14:23:28.192936789 +0100
+diff -uNr chromium-65.0.3325.162.orig/chrome/browser/resources/settings/on_startup_page/startup_url_dialog.html chromium-65.0.3325.162/chrome/browser/resources/settings/on_startup_page/startup_url_dialog.html
+--- chromium-65.0.3325.162.orig/chrome/browser/resources/settings/on_startup_page/startup_url_dialog.html	2018-10-26 14:53:06.433701623 +0200
++++ chromium-65.0.3325.162/chrome/browser/resources/settings/on_startup_page/startup_url_dialog.html	2018-10-26 09:14:32.985444895 +0200
+@@ -11,14 +11,44 @@
+     <style include="settings-shared"></style>
+     <dialog is="cr-dialog" id="dialog" close-text="$i18n{close}">
+       <div slot="title">[[dialogTitle_]]</div>
+-      <div slot="body">
+-        <paper-input always-float-label id="url" label="$i18n{onStartupSiteUrl}"
+-            value="{{url_}}" on-input="validate_" spellcheck="false"
+-            maxlength="[[urlLimit_]]" invalid="[[error_]]"
+-            char-counter="[[showCharCounter_(error_)]]" autofocus
+-            error-message="[[errorMessage_('$i18nPolymer{onStartupInvalidUrl}',
+-                '$i18nPolymer{onStartupUrlTooLong}', error_)]]">
+-        </paper-input>
++        <div slot="body" always-float-label="">
++          <style scoped=>:host {
++              display: block;
++            }
++
++           :host([focused]) {
++             outline: none;
++           }
++
++           :host([hidden]) {
++             display: none !important;
++           }
++
++           input::-webkit-input-placeholder {
++             color: var(--paper-input-container-color,var(--secondary-text-color));
++           }
++
++           input:-moz-placeholder {
++             color: var(--paper-input-container-color,var(--secondary-text-color));
++           }
++
++           input::-moz-placeholder {
++             color: var(--paper-input-container-color,var(--secondary-text-color));
++           }
++
++           input:-ms-input-placeholder {
++             color: var(--paper-input-container-color,var(--secondary-text-color));
++           }
++
++           label {
++             pointer-events: none;
++           }
++         </style>
++         <paper-input-container>
++           <content select="[prefix]"></content>
++           <label aria-hidden="true" for="input" id="paper-input-label-3">Site URL</label>
++           <input is="iron-input" id="input" autocomplete="off" placeholder="" autocapitalize="none" autocorrect="off" aria-describedby="" aria-labelledby="paper-input-label-3" autofocus="" tabindex="0">
++         </paper-input-container>
+       </div>
+       <div slot="button-container">
+         <paper-button class="cancel-button" on-tap="onCancelTap_"
+diff -uNr chromium-65.0.3325.162.orig/chrome/browser/resources/settings/on_startup_page/startup_urls_page.html chromium-65.0.3325.162/chrome/browser/resources/settings/on_startup_page/startup_urls_page.html
+--- chromium-65.0.3325.162.orig/chrome/browser/resources/settings/on_startup_page/startup_urls_page.html	2018-10-26 14:53:06.025696731 +0200
++++ chromium-65.0.3325.162/chrome/browser/resources/settings/on_startup_page/startup_urls_page.html	2018-10-26 09:14:32.985444895 +0200
 @@ -17,41 +17,29 @@
  <dom-module id="settings-startup-urls-page">
    <template>
@@ -279,58 +339,3 @@ diff -uNr chromium-64.0.3282.140-2/chrome/browser/resources/settings/on_startup_
          <div class="list-item" id="addPage">
            <a is="action-link" class="list-button" on-tap="onAddPageTap_">
              $i18n{onStartupAddNewPage}
---- chromium-65.0.3325.162.2/chrome/browser/resources/settings/on_startup_page/startup_url_dialog.html	2018-03-27 15:34:19.790247377 +0200
-+++ chromium-65.0.3325.162/chrome/browser/resources/settings/on_startup_page/startup_url_dialog.html	2018-03-27 15:36:03.771691146 +0200
-@@ -11,14 +11,44 @@
-     <style include="settings-shared"></style>
-     <dialog is="cr-dialog" id="dialog" close-text="$i18n{close}">
-       <div slot="title">[[dialogTitle_]]</div>
--      <div slot="body">
--        <paper-input always-float-label id="url" label="$i18n{onStartupSiteUrl}"
--            value="{{url_}}" on-input="validate_" spellcheck="false"
--            maxlength="[[urlLimit_]]" invalid="[[error_]]"
--            char-counter="[[showCharCounter_(error_)]]" autofocus
--            error-message="[[errorMessage_('$i18nPolymer{onStartupInvalidUrl}',
--                '$i18nPolymer{onStartupUrlTooLong}', error_)]]">
--        </paper-input>
-+        <div slot="body" always-float-label="">
-+          <style scoped=>:host {
-+              display: block;
-+            }
-+
-+           :host([focused]) {
-+             outline: none;
-+           }
-+
-+           :host([hidden]) {
-+             display: none !important;
-+           }
-+
-+           input::-webkit-input-placeholder {
-+             color: var(--paper-input-container-color,var(--secondary-text-color));
-+           }
-+
-+           input:-moz-placeholder {
-+             color: var(--paper-input-container-color,var(--secondary-text-color));
-+           }
-+
-+           input::-moz-placeholder {
-+             color: var(--paper-input-container-color,var(--secondary-text-color));
-+           }
-+
-+           input:-ms-input-placeholder {
-+             color: var(--paper-input-container-color,var(--secondary-text-color));
-+           }
-+
-+           label {
-+             pointer-events: none;
-+           }
-+         </style>
-+         <paper-input-container>
-+           <content select="[prefix]"></content>
-+           <label aria-hidden="true" for="input" id="paper-input-label-3">Site URL</label>
-+           <input is="iron-input" id="input" autocomplete="off" placeholder="" autocapitalize="none" autocorrect="off" aria-describedby="" aria-labelledby="paper-input-label-3" autofocus="" tabindex="0">
-+         </paper-input-container>
-       </div>
-       <div slot="button-container">
-         <paper-button class="cancel-button" on-tap="onCancelTap_"

@@ -6,7 +6,8 @@ NPM_INSTALL ?= ""
 NPM_INSTALL_FLAGS ?= ""
 
 do_npm_install() {
-	oe_runnpm ${NPM_INSTALL_FLAGS} install ${NPM_INSTALL}
+	oe_runnpm ${NPM_INSTALL_FLAGS} --only=prod install ${NPM_INSTALL}
+	oe_runnpm_native ${NPM_INSTALL_FLAGS} --only=dev install ${NPM_INSTALL}
 }
 
 do_npm_shrinkwrap() {

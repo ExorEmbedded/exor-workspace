@@ -3,9 +3,9 @@ DESCRIPTION = "Cloud Enabler library"
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=44919a17bae6ff573e20411bbbc1d778"
 
-PR = "x19"
+PR = "x22"
 SRCBRANCH = "exorint-1.x.x"
-SRCREV = "fabfcdefec6891a299b2c128fc66ec19cb780760"
+SRCREV = "effdb14a7b2f881813ad5c92f08641dc016e02ed"
 SRC_URI = "git://github.com/ExorEmbedded/libencloud.git;branch=${SRCBRANCH}"
 
 inherit exorint-src

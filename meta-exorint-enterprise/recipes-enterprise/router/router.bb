@@ -10,7 +10,7 @@ SRC_URI += "file://init"
 
 S = "${WORKDIR}"
 
-PR = "x14"
+PR = "x15"
 
 # No DNS/DHCP server implemented (yet)
 #RDEPENDS_${PN} += "dnsmasq"

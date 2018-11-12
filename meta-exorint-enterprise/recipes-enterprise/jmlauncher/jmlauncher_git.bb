@@ -3,11 +3,11 @@ DESCRIPTION = "HMI desktop application"
 LICENSE = "Proprietary"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=a26136a158a7bd489efe50329e38188a"
 
-PR = "r22"
+PR = "r23"
 SRCNAME = "jml"
 
 SRCBRANCH = "exorint-1.x.x"
-SRCREV = "6669939a630535a2f693d7237bf10cc03eee2119"
+SRCREV = "8f36bb2623aa050a2d5477373ce6d2ab9af83477"
 
 inherit exorint-src
 inherit qmake2

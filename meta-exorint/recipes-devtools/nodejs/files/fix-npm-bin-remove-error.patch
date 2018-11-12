@@ -1,0 +1,11 @@
+diff -uNr node-v8.4.0/deps/npm/lib/utils/gently-rm.js node-v8.4.0-2/deps/npm/lib/utils/gently-rm.js
+--- node-v8.4.0/deps/npm/lib/utils/gently-rm.js	2017-08-15 18:42:25.000000000 +0200
++++ node-v8.4.0-2/deps/npm/lib/utils/gently-rm.js	2018-11-12 08:21:30.692399940 +0100
+@@ -40,7 +40,6 @@
+     npm.dir,
+     npm.root,
+     npm.globalDir,
+-    npm.bin,
+     npm.globalBin
+   ]
+ 

@@ -30,6 +30,7 @@ do_start()
 
     # masquerade packets coming from VPN
     iptables -A PREROUTING -t mangle -i tap0 -j MARK --set-mark 1 -m comment --comment "mark VPN packets for natting"
+    iptables -A PREROUTING -t mangle -i tap1 -j MARK --set-mark 1 -m comment --comment "mark VPN packets for natting"  # [see #814]
     iptables -A PREROUTING -t mangle -i tun0 -j MARK --set-mark 1 -m comment --comment "mark VPN packets for natting"
     iptables -A POSTROUTING -t nat -j MASQUERADE -m mark --mark 1
 

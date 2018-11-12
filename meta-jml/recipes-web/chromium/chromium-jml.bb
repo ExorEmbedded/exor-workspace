@@ -5,9 +5,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=a26136a158a7bd489efe50329e38188a"
 
 SRCNAME = "chrome-ext"
 SRCBRANCH = "chromium64"
-SRCREV = "fbf9807c50d7375ea32cd492396caf31b1f04686"
+SRCREV = "596b0ef115c17a11cf519b7c09fba0aeed300639"
 
-PV = "0.7"
+PV = "0.11"
 PKG_NAME = "Chromium"
 PKG_VERSION = "65-${PV}"
 PKG_PLATFORM = "un6x"
@@ -19,7 +19,8 @@ DEPENDS += "chromium-x11 epad"
 
 # Some of the libraries needed by chromium are already included in the BSP, this
 # is the list of those that are not and have to be included in the jmlauncher package. 
-PKG_LIBS = "libsmime3.so \
+PKG_LIBS = " \
+	libsmime3.so \
 	libnss3.so \
 	libnssutil3.so \
 	libnspr4.so \
@@ -40,6 +41,9 @@ PKG_LIBS = "libsmime3.so \
 	libwebp.so.7 \
 	libsmime3.so \
 "
+
+# These are only needed for BSP 1.0.x compatibility
+PKG_LIBS += "libjpeg.so.62 libstdc++.so.6 libdbus-1.so.3"
 
 do_install_append() {
 

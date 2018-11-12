@@ -18,8 +18,10 @@ SRCBRANCH = "master"
 SRCREV = "c6fccb2fb9b684d809342cb509f58fa8fb53bfa6"
 
 SRC_URI += "https://github.com/node-red/node-red/archive/${PV}.zip"
-SRC_URI[md5sum] = "37527ef825f5f17a7d012eb1d06090e2"
-SRC_URI[sha256sum] = "bd8e2cc43427a51d6a6269546a83839c5a14c0fc631c7ddac2503023b46ad53e"
+SRC_URI[md5sum] = "af0988126e77d7b76075fdc4d1177cd9"
+SRC_URI[sha256sum] = "719eb94821cfdf0c0bfeba449efb3ea88bc26613d5938f4034762bff9d20ed02"
+#SRC_URI[md5sum] = "fc8762d15e3484cade4981a477c9a2f4"
+#SRC_URI[sha256sum] = "8cb81f643b518c68c8f15dfeff7c9b37edf7b1313160ad041d9cedcf70554570"
 
 SRC_URI += "file://license.html"
 

@@ -1,0 +1,34 @@
+diff -uNr a/arch/arm/boot/dts/usom_jsmart.dts b/arch/arm/boot/dts/usom_jsmart.dts
+--- a/arch/arm/boot/dts/usom_jsmart.dts	2018-10-19 11:59:20.226350879 +0200
++++ b/arch/arm/boot/dts/usom_jsmart.dts	2017-09-15 14:41:16.000000000 +0200
+@@ -27,3 +27,16 @@
+ &pxp {
+ 	status = "okay";
+ };
++
++
++&cpu0 {
++	arm-supply = <&reg_arm>;
++	soc-supply = <&reg_soc>;
++};
++
++&gpc {
++	/* use ldo-enable, u-boot will check it and configure */
++	fsl,ldo-bypass = <0>;
++	/* watchdog select of reset source */
++	fsl,wdog-reset = <1>;
++};
+diff -uNr a/arch/arm/mach-imx/mach-imx6q.c b/arch/arm/mach-imx/mach-imx6q.c
+--- a/arch/arm/mach-imx/mach-imx6q.c	2018-10-19 11:59:20.750358784 +0200
++++ b/arch/arm/mach-imx/mach-imx6q.c	2017-09-15 14:38:17.000000000 +0200
+@@ -506,8 +506,8 @@
+ 	if (dev_pm_opp_disable(cpu_dev, 1200000000))
+ 		pr_warn("failed to disable 1.2 GHz OPP\n");
+ 	//Forge disabling 1Ghz OPP -- if (val < OCOTP_CFG3_SPEED_996MHZ)
+-	if (dev_pm_opp_disable(cpu_dev, 996000000))
+-		pr_warn("failed to disable 996 MHz OPP\n");
++//	if (dev_pm_opp_disable(cpu_dev, 996000000))
++//		pr_warn("failed to disable 996 MHz OPP\n");
+ 	if (cpu_is_imx6q()) {
+ 		if (val != OCOTP_CFG3_SPEED_852MHZ)
+ 			if (dev_pm_opp_disable(cpu_dev, 852000000))

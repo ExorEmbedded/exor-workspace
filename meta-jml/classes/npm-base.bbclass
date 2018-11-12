@@ -1,4 +1,4 @@
-DEPENDS += " node-native"
+DEPENDS += " nodejs-native"
 
 inherit nodejs-arch
 
@@ -22,6 +22,8 @@ NPM_FLAGS_append_class-nativesdk = " --unsafe-perm"
 # Target npm
 
 oe_runnpm() {
+
+	cd ${S}
 
 	if [ "${NPM_ARCH}" != "allarch" ]; then
 		ARCH_FLAGS="--arch=${NPM_ARCH} --target_arch=${NPM_ARCH}"
@@ -59,7 +61,7 @@ oe_runnpm() {
 
 	export HOME="${NPM_HOME_DIR}"
 
-	${NPM} cache clean || die "oe_runnpm failed (cache clean)"
+	${NPM} cache clean --force || die "oe_runnpm failed (cache clean)"
 
 	LD="${NPM_LD}" ${NPM} --registry=${NPM_REGISTRY} ${ARCH_FLAGS} ${NPM_FLAGS} "$@" || die "oe_runnpm failed (install)"
 
@@ -114,7 +116,7 @@ oe_runnpm_native() {
 
 	export HOME="${NPM_HOME_DIR_NATIVE}"
 
-	${NPM} cache clean || die "oe_runnpm_native failed (cache clean)"
+	${NPM} cache clean --force || die "oe_runnpm_native failed (cache clean)"
 
 	LD="${NPM_LD_NATIVE}" ${NPM_NATIVE} --registry=${NPM_REGISTRY} ${ARCH_FLAGS} ${NPM_FLAGS_NATIVE} "$@" || die "oe_runnpm_native failed (install)"
 

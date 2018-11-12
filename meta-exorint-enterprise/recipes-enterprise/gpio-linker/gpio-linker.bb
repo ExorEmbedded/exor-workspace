@@ -18,6 +18,8 @@ inherit update-rc.d
 INITSCRIPT_NAME = "gpio.sh"
 INITSCRIPT_PARAMS = "start 51 S ."
 
+RDEPENDS_${PN} += "bash"
+
 do_install_append_us01-wu16() {
 	install -d ${D}${sysconfdir}/default/
 	install -m 644 gpio_ti ${D}/${sysconfdir}/default/gpio

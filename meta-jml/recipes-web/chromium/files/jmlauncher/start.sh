@@ -21,7 +21,8 @@ DISK_CACHE_SIZE="52428800" # 50mb
 CPU="$( cat /proc/cpuinfo | grep Hardware )"
 if ( echo $CPU | grep -q "Freescale i.MX6" ); then
 	GPU_FLAGS="--use-gl=egl --enable-zero-copy --disable-accelerated-2d-canvas --disable-es3-gl-context \
-		--enable-gpu-compositing --enable-threaded-compositing"
+		--enable-gpu-compositing --enable-threaded-compositing --gpu-no-context-lost \
+		--enable-gpu-memory-buffer-video-frames --enable-native-gpu-memory-buffers"
 else
 	GPU_FLAGS="--disable-gpu"
 fi

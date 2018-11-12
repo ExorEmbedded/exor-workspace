@@ -43,6 +43,7 @@ IMAGE_INSTALL += "icu"
 IMAGE_INSTALL += "update-rc.d"
 IMAGE_INSTALL += "openssl"
 IMAGE_INSTALL += "openssl-backcompat"
+IMAGE_INSTALL += "shadow"
 
 # devices
 IMAGE_INSTALL += "mtd-utils"

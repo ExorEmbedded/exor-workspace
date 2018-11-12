@@ -8,7 +8,7 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/linux-${LINUX_VERSION}:"
 SRCNAME = "lke"
 
 SRCBRANCH = "ti-linux-3.12.y_RT"
-SRCREV = "aba3c17659ea1fe17589b0ab37b1c6743f405ba4"
+SRCREV = "199299daaf4bc87fbbda207a2d10e20e84848bab"
 
 SRCBRANCH_ca16 = "ti-linux-3.12.y_pgd_ca"
 SRCREV_ca16 = "8864dc0463b9d4dc697e24c1e2f910c9f445655f"

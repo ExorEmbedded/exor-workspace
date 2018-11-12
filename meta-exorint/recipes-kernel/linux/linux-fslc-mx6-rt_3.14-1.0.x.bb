@@ -11,16 +11,10 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/linux-${LINUX_VERSION}:"
 
 SRCNAME = "imx6linux"
 SRCBRANCH = "master"
-SRCREV = "57f615d8f3a69be0f7321ec705cc9bc673ac9b19"
+SRCREV = "9158d1018df366a74c904c0ab028968fd1026782"
 SRC_URI = "git://github.com/ExorEmbedded/linux-us03.git;branch=${SRCBRANCH}"
 
-SRC_URI_append = "\
-    file://0001-use-static-inline-in-ARM-ftrace.patch \
-    file://0002-change-extern-inline-to-static-inline-in-glue-cache.patch \
-    file://0003-genksyms-fix-typeof-handling.patch \
-    file://0004-Add-compiler-gcc6.h.patch \
-    file://0005-Add-compiler-gcc7.h.patch \
-"
+SRC_URI_append_jsxx-1ghz = " file://us03dl-enable-1ghz-mode.patch"
 
 LINUX_VERSION = "3.14"
 
@@ -29,3 +23,11 @@ COMPATIBLE_MACHINE = "(usom03)"
 DEPENDS += "lzop-native bc-native"
 
 require linux.inc
+
+SRC_URI += " \
+    file://0001-use-static-inline-in-ARM-ftrace.patch \
+    file://0002-change-extern-inline-to-static-inline-in-glue-cache.patch \
+    file://0003-genksyms-fix-typeof-handling.patch \
+    file://0004-Add-compiler-gcc6.h.patch \
+    file://0005-Add-compiler-gcc7.h.patch \
+"

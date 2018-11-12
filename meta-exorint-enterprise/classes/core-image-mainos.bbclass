@@ -6,6 +6,8 @@ IMAGE_INSTALL += "canutils"
 # Poppler libraries needed for the pdf viewer
 IMAGE_INSTALL += "poppler"
 
+IMAGE_INSTALL += "qt4-plugin-imageformat-jpeg"
+
 # Qt mediaplayer dependencies
 #
 # TODO FIXME:

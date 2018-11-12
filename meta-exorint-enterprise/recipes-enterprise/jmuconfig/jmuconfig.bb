@@ -3,11 +3,11 @@ DESCRIPTION = "JMCloud device configuration web application"
 LICENSE = "Proprietary"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=a26136a158a7bd489efe50329e38188a"
 
-PR = "x139"
+PR = "x146"
 SRCNAME = "jmuconfig"
 
 SRCBRANCH = "rocko-1.x.x"
-SRCREV = "132a53c88ab72fa07d1e0c10494738e8b720cb04"
+SRCREV = "af9be42a7c461f851114a140beb7ecfa2b48a06a"
 
 SRCBRANCH_ca16 = "pgd_ca-1.x.x"
 SRCREV_ca16 = "20ac95aab7d1e2a4a21d15de2b851eb6d6a27800"
