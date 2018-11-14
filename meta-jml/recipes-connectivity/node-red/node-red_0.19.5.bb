@@ -16,7 +16,7 @@ PKG_VERSION = "${PV}-${PR}"
 
 SRCBRANCH = "master"
 SRCREV = "c6fccb2fb9b684d809342cb509f58fa8fb53bfa6"
-SRC_URI = "git://github.com/ExorEmbedded/jmnodered.git;branch=${SRCBRANCH}"
+SRC_URI += "git://github.com/ExorEmbedded/jmnodered.git;branch=${SRCBRANCH}"
 
 SRC_URI += "https://github.com/node-red/node-red/archive/${PV}.zip"
 SRC_URI[md5sum] = "af0988126e77d7b76075fdc4d1177cd9"
