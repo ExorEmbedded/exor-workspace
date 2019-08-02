@@ -1,0 +1,14 @@
+Index: avahi-0.7/initscript/debian/avahi-daemon.in
+===================================================================
+--- avahi-0.7.orig/initscript/debian/avahi-daemon.in
++++ avahi-0.7/initscript/debian/avahi-daemon.in
+@@ -131,6 +131,9 @@ d_start() {
+ 	fi
+ 	cp -fp /etc/localtime @sysconfdir@/avahi/etc >/dev/null 2>&1
+     fi;
++
++    # invoke config generation script
++    /etc/avahi/avahi-daemon.conf.sh > /etc/avahi/avahi-daemon.conf
+     
+     $DAEMON -D
+ }

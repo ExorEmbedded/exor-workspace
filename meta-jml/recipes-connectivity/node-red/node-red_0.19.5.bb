@@ -14,6 +14,7 @@ inherit npm-install jml-package
 PR = "0.1"
 PKG_VERSION = "${PV}-${PR}"
 
+SRCNAME = "jmnodered"
 SRCBRANCH = "master"
 SRCREV = "c6fccb2fb9b684d809342cb509f58fa8fb53bfa6"
 SRC_URI += "git://github.com/ExorEmbedded/jmnodered.git;branch=${SRCBRANCH}"

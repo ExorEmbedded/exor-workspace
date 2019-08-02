@@ -74,6 +74,8 @@ KERNEL=="gpio*", PROGRAM="/bin/sh -c '\
 SUBSYSTEM=="spidev", GROUP="comm", MODE="0660"
 SUBSYSTEM=="i2c-dev", GROUP="comm", MODE="0660"
 
+KERNEL=="tty[A-Z]*[0-9]|ttymxc[0-9]|pppox[0-9]*|ircomm[0-9]*|noz[0-9]*|rfcomm[0-9]*", GROUP="dialout"
+
 #
 # FRAM
 #
@@ -81,12 +83,14 @@ SUBSYSTEM=="i2c-dev", GROUP="comm", MODE="0660"
 SUBSYSTEM=="spi", ATTRS{modalias}=="spi:at25", PROGRAM="/bin/ln -s /sys/bus/spi/devices/%k/eeprom /dev/fram"
 
 #
-# PLxx plugins
+# Plugins
 #
 
 DRIVER=="plxx_manager", PROGRAM="/bin/sh -c '\
         NAME=$(echo %k | cut -d. -f1 ); \
         /bin/ln -s /sys/bus/platform/devices/%k /dev/$NAME"
+
+DRIVER=="dvipluginhdaxx" PROGRAM="/bin/ln -s /sys/%p /dev/dviplugin"
 
 #
 # Video
@@ -101,6 +105,12 @@ SUBSYSTEM=="backlight", RUN+="/bin/chgrp video /sys/class/backlight/%k/brightnes
 
 KERNEL=="mouse[0-9]", ACTION=="add",  RUN+="/etc/udev/scripts/mouse.sh"
 KERNEL=="mouse[0-9]", ACTION=="remove",  RUN+="/etc/udev/scripts/mouse.sh"
+
+#
+# USB Network Adapters
+#
+
+SUBSYSTEM=="net", ACTION=="add", KERNEL=="eth[0-9]", ENV{IFACE}="%k", RUN+="/etc/udev/scripts/net.sh"
 
 # Create symlinks for uart ports
 KERNEL=="ttyUSB0", SUBSYSTEM=="tty", SYMLINK="com10"

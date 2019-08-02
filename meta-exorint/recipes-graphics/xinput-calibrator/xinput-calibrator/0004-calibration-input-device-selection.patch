@@ -1,0 +1,27 @@
+diff -uNr git/scripts/xinput_calibrator_pointercal.sh git2/scripts/xinput_calibrator_pointercal.sh
+--- git/scripts/xinput_calibrator_pointercal.sh	2019-02-07 09:38:47.304618379 +0100
++++ git2/scripts/xinput_calibrator_pointercal.sh	2019-02-07 09:39:45.944617755 +0100
+@@ -39,7 +39,22 @@
+ 
+ [ "$1" = "--restore" ] && exit 0
+ 
+-CALDATA=`$BINARY --output-type xinput -v | tee $LOGFILE | grep '    xinput set' | sed 's/^    //g; s/$/;/g'`
++
++# Prefer Goodix touchscreen if found
++DEV_ID=$( /usr/bin/xinput | grep Goodix | sed 's:.*id=\([0-9]*\).*$:\1:' )
++[ -z "$DEV_ID" ] && DEV_ID=$( $BINARY --list | head -n1 | sed 's:.*id=\([0-9]*\):\1:' )
++
++[ -n "$DEV_ID" ] && DEVICE="--device $DEV_ID"
++
++# Pre-swap axes if we need to
++if [ -e /etc/rotation -a -n "$DEV_ID" ]; then
++	rot=$( cat /etc/rotation )
++	if [ "$rot" == "90" -o "$rot" == "270" ]; then
++		/usr/bin/xinput set-int-prop $DEV_ID "Evdev Axes Swap" 8 1
++	fi
++fi
++
++CALDATA=`$BINARY --output-type xinput -v $DEVICE | tee $LOGFILE | grep '    xinput set' | sed 's/^    //g; s/$/;/g'`
+ if [ ! -z "$CALDATA" ] ; then
+   mount -o remount,rw $FACTORYMNT
+   mkdir -p $CALDIR

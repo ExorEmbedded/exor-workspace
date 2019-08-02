@@ -1,5 +1,6 @@
 require qt5.inc
 require qt5-git.inc
+require qt5-ptest.inc
 
 HOMEPAGE = "http://www.qt.io"
 LICENSE = "GFDL-1.3 & BSD & ( GPL-3.0 & The-Qt-Company-GPL-Exception-1.0 | The-Qt-Company-Commercial ) & ( GPL-2.0+ | LGPL-3.0 | The-Qt-Company-Commercial )"
@@ -11,14 +12,11 @@ LIC_FILES_CHKSUM = " \
     file://LICENSE.FDL;md5=6d9f2a9af4c8b8c3c769f6cc1b6aaf7e \
 "
 
-inherit ptest
-
 DEPENDS += "qtbase qtdeclarative qtxmlpatterns"
 
-# Patches from https://github.com/meta-qt5/qttools/commits/b5.9
-# 5.9.meta-qt5.4
+# Patches from https://github.com/meta-qt5/qttools/commits/b5.12
+# 5.12.meta-qt5.2
 SRC_URI += " \
-    file://run-ptest \
     file://0001-add-noqtwebkit-configuration.patch \
     file://0002-linguist-tools-cmake-allow-overriding-the-location-f.patch \
 "
@@ -29,22 +27,18 @@ FILES_${PN}-examples = "${datadir}${QT_DIR_NAME}/examples"
 PACKAGECONFIG ??= ""
 PACKAGECONFIG[qtwebkit] = ",,qtwebkit"
 
-EXTRA_QMAKEVARS_PRE += "${@bb.utils.contains('PACKAGECONFIG', 'qtwebkit', '', 'CONFIG+=noqtwebkit', d)}"
+EXTRA_QMAKEVARS_PRE += " \
+    CONFIG-=config_clang \
+    ${@bb.utils.contains('PACKAGECONFIG', 'qtwebkit', '', 'CONFIG+=noqtwebkit', d)} \
+"
 
-SRCREV = "98f8f4971e6c2ffcb0ac5793ffe834197ab034ab"
+SRCREV = "1f8d498752fed0b2b92d6a619aa11524dd771998"
 
 BBCLASSEXTEND = "native nativesdk"
-
-do_compile_ptest() {
-    export PATH=${STAGING_DIR_NATIVE}/usr/include/qt5:$PATH
-    cd ${S}/tests
-    qmake -o Makefile tests.pro
-    oe_runmake
-}
 
 do_install_ptest() {
     mkdir -p ${D}${PTEST_PATH}
     t=${D}${PTEST_PATH}
-    cp ${S}/tests/auto/qtdiag/tst_tdiag $t
-    cp ${S}/tests/auto/qtattributionsscanner/tst_qtattributionsscanner $t
+    cp ${B}/tests/auto/qtdiag/tst_tdiag $t
+    cp ${B}/tests/auto/qtattributionsscanner/tst_qtattributionsscanner $t
 }

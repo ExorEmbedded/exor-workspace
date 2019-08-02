@@ -20,7 +20,6 @@ SSTATE_SCAN_FILES += "*.pri *.prl *.prf"
 # then OE_QMAKE_CFLAGS are exported and used correctly, but then whole CFLAGS is overwritten from env (and -fPIC lost and build fails)
 EXTRA_OEMAKE = " \
     MAKEFLAGS='${PARALLEL_MAKE}' \
-    OE_QMAKE_COMPILER='${OE_QMAKE_COMPILER}' \
     OE_QMAKE_CC='${OE_QMAKE_CC}' \
     OE_QMAKE_CXX='${OE_QMAKE_CXX}' \
     OE_QMAKE_CFLAGS='${OE_QMAKE_CFLAGS}' \
@@ -29,12 +28,10 @@ EXTRA_OEMAKE = " \
     OE_QMAKE_LDFLAGS='${OE_QMAKE_LDFLAGS}' \
     OE_QMAKE_AR='${OE_QMAKE_AR}' \
     OE_QMAKE_STRIP='${OE_QMAKE_STRIP}' \
-    OE_QMAKE_WAYLAND_SCANNER='${OE_QMAKE_WAYLAND_SCANNER}' \
     OE_QMAKE_INCDIR_QT='${STAGING_DIR_TARGET}/${OE_QMAKE_PATH_HEADERS}' \
 "
 
 OE_QMAKE_QMAKE = "${OE_QMAKE_PATH_EXTERNAL_HOST_BINS}/qmake"
-export OE_QMAKE_COMPILER = "${CC}"
 export OE_QMAKE_CC = "${CC}"
 export OE_QMAKE_CFLAGS = "${CFLAGS}"
 export OE_QMAKE_CXX = "${CXX}"
@@ -43,12 +40,39 @@ export OE_QMAKE_LINK = "${CXX}"
 export OE_QMAKE_LDFLAGS = "${LDFLAGS}"
 export OE_QMAKE_AR = "${AR}"
 export OE_QMAKE_STRIP = "echo"
-export OE_QMAKE_WAYLAND_SCANNER = "${STAGING_BINDIR_NATIVE}/wayland-scanner"
 
 # qmake reads if from shell environment
 export OE_QMAKE_QTCONF_PATH = "${WORKDIR}/qt.conf"
 
 inherit qmake5_paths remove-libtool
+
+generate_target_qt_config_file() {
+    qtconf="$1"
+    cat > "${qtconf}" <<EOF
+[Paths]
+Prefix = ${OE_QMAKE_PATH_PREFIX}
+Headers = ${OE_QMAKE_PATH_HEADERS}
+Libraries = ${OE_QMAKE_PATH_LIBS}
+ArchData = ${OE_QMAKE_PATH_ARCHDATA}
+Data = ${OE_QMAKE_PATH_DATA}
+Binaries = ${OE_QMAKE_PATH_BINS}
+LibraryExecutables = ${OE_QMAKE_PATH_LIBEXECS}
+Plugins = ${OE_QMAKE_PATH_PLUGINS}
+Qml2Imports = ${OE_QMAKE_PATH_QML}
+Translations = ${OE_QMAKE_PATH_TRANSLATIONS}
+Documentation = ${OE_QMAKE_PATH_DOCS}
+Settings = ${OE_QMAKE_PATH_SETTINGS}
+Examples = ${OE_QMAKE_PATH_EXAMPLES}
+Tests = ${OE_QMAKE_PATH_TESTS}
+HostBinaries = ${OE_QMAKE_PATH_BINS}
+HostData = ${OE_QMAKE_PATH_ARCHDATA}
+HostLibraries = ${OE_QMAKE_PATH_LIBS}
+HostSpec = ${OE_QMAKE_PLATFORM}
+TargetSpec = ${OE_QMAKE_PLATFORM}
+ExternalHostBinaries = ${OE_QMAKE_PATH_BINS}
+Sysroot =
+EOF
+}
 
 do_generate_qt_config_file() {
     generate_qt_config_file_paths
@@ -66,7 +90,6 @@ Data = ${OE_QMAKE_PATH_DATA}
 Binaries = ${OE_QMAKE_PATH_BINS}
 LibraryExecutables = ${OE_QMAKE_PATH_LIBEXECS}
 Plugins = ${OE_QMAKE_PATH_PLUGINS}
-Imports = ${OE_QMAKE_PATH_IMPORTS}
 Qml2Imports = ${OE_QMAKE_PATH_QML}
 Translations = ${OE_QMAKE_PATH_TRANSLATIONS}
 Documentation = ${OE_QMAKE_PATH_DOCS}
@@ -88,7 +111,7 @@ generate_qt_config_file_effective_paths() {
 [EffectivePaths]
 HostBinaries = ${OE_QMAKE_PATH_EXTERNAL_HOST_BINS}
 HostData = ${OE_QMAKE_PATH_HOST_DATA}
-HostPrefix = ${STAGING_DIR_NATIVE}${prefix_native}
+HostPrefix = ${STAGING_DIR_NATIVE}
 EOF
 }
 #
@@ -217,9 +240,18 @@ qmake5_base_do_install() {
     qmake5_base_fix_install ${STAGING_DIR_HOST}
     qmake5_base_fix_install ${STAGING_DIR_NATIVE}
 
-    if ls ${D}${libdir}/pkgconfig/*.pc >/dev/null 2>/dev/null; then
-        sed -i ${D}${libdir}/pkgconfig/*.pc \
-            -e "s@-L${STAGING_LIBDIR}@-L\${libdir}@g" \
-            -e "s@${STAGING_DIR_TARGET}@@g"
-    fi
+    # Replace host paths with qmake built-in properties
+    find ${D} \( -name "*.pri" -or -name "*.prl" \) -exec \
+        sed -i -e 's|${STAGING_DIR_NATIVE}|$$[QT_HOST_PREFIX/get]|g' \
+            -e 's|${STAGING_DIR_HOST}|$$[QT_SYSROOT]|g' {} \;
+
+    # Replace host paths with pkg-config built-in variable
+    find ${D} -name "*.pc" -exec \
+        sed -i -e 's|prefix=${STAGING_DIR_HOST}|prefix=|g' \
+            -e 's|${STAGING_DIR_HOST}|${pc_sysrootdir}|g' {} \;
+
+    # Replace resolved lib path with the lib name
+    find ${D} -name "*.cmake" -exec \
+        sed -i -e 's@/[^;]*/lib\([^;]*\)\.\(so\|a\)@\1@g' {} \;
+
 }

@@ -1,6 +1,6 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
-PR := "${PR}.x1"
+PR := "${PR}.x3"
 
 SRC_URI += "file://init \
 	file://x11vnc.conf"

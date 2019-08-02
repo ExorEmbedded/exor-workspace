@@ -1,4 +1,4 @@
-From 3e3ba87fc8158a0c11b16f72e931ca3c19eff6d9 Mon Sep 17 00:00:00 2001
+From 406ea336ac2a1bc7dac055c378303f27b8a20c2d Mon Sep 17 00:00:00 2001
 From: Martin Jansa <Martin.Jansa@gmail.com>
 Date: Mon, 15 Apr 2013 04:29:32 +0200
 Subject: [PATCH] Add linux-oe-g++ platform
@@ -21,16 +21,17 @@ Change-Id: I0591ed5da0d61d7cf1509d420e6b293582f1863c
 Signed-off-by: Martin Jansa <Martin.Jansa@gmail.com>
 ---
  configure                            |  2 +-
- mkspecs/features/configure.prf       |  4 ++--
+ mkspecs/features/configure.prf       |  4 +--
+ mkspecs/features/qt.prf              |  6 ++---
  mkspecs/features/qt_functions.prf    |  2 +-
- mkspecs/linux-oe-g++/qmake.conf      | 43 ++++++++++++++++++++++++++++++++++++
+ mkspecs/linux-oe-g++/qmake.conf      | 39 ++++++++++++++++++++++++++++
  mkspecs/linux-oe-g++/qplatformdefs.h |  1 +
- 5 files changed, 48 insertions(+), 4 deletions(-)
+ 6 files changed, 47 insertions(+), 7 deletions(-)
  create mode 100644 mkspecs/linux-oe-g++/qmake.conf
  create mode 100644 mkspecs/linux-oe-g++/qplatformdefs.h
 
 diff --git a/configure b/configure
-index 08b49a8..5876721 100755
+index ef7bad1bfc..dcca0f9135 100755
 --- a/configure
 +++ b/configure
 @@ -712,7 +712,7 @@ fi
@@ -43,7 +44,7 @@ index 08b49a8..5876721 100755
  
  # build qmake
 diff --git a/mkspecs/features/configure.prf b/mkspecs/features/configure.prf
-index 934a18a..0f5b1b6 100644
+index 934a18a924..0f5b1b6333 100644
 --- a/mkspecs/features/configure.prf
 +++ b/mkspecs/features/configure.prf
 @@ -46,14 +46,14 @@ defineTest(qtCompileTest) {
@@ -63,8 +64,32 @@ index 934a18a..0f5b1b6 100644
              log("yes$$escape_expand(\\n)")
              msg = "test $$1 succeeded"
              write_file($$QMAKE_CONFIG_LOG, msg, append)
+diff --git a/mkspecs/features/qt.prf b/mkspecs/features/qt.prf
+index d8d5acaafd..57d11420c2 100644
+--- a/mkspecs/features/qt.prf
++++ b/mkspecs/features/qt.prf
+@@ -147,7 +147,7 @@ import_plugins:qtConfig(static) {
+         !isEmpty(plug_type) {
+             plug_path = $$eval(QT_PLUGIN.$${plug}.PATH)
+             isEmpty(plug_path): \
+-                plug_path = $$[QT_INSTALL_PLUGINS/get]
++                plug_path = $$[QT_INSTALL_PLUGINS]
+             LIBS += -L$$plug_path/$$plug_type
+         }
+         LIBS += -l$${plug}$$qtPlatformTargetSuffix()
+@@ -277,8 +277,8 @@ for(ever) {
+ # static builds: link qml import plugins into the target.
+ contains(all_qt_module_deps, qml): \
+         qtConfig(static):import_plugins:!host_build:!no_import_scan {
+-    exists($$[QT_INSTALL_QML/get]): \
+-        QMLPATHS *= $$[QT_INSTALL_QML/get]
++    exists($$[QT_INSTALL_QML]): \
++        QMLPATHS *= $$[QT_INSTALL_QML]
+ 
+     # run qmlimportscanner
+     qtPrepareTool(QMLIMPORTSCANNER, qmlimportscanner, , system)
 diff --git a/mkspecs/features/qt_functions.prf b/mkspecs/features/qt_functions.prf
-index 1903e50..c093dd4 100644
+index 1903e509c8..c093dd4592 100644
 --- a/mkspecs/features/qt_functions.prf
 +++ b/mkspecs/features/qt_functions.prf
 @@ -69,7 +69,7 @@ defineTest(qtHaveModule) {
@@ -78,10 +103,10 @@ index 1903e50..c093dd4 100644
              cmd = perl -w $$system_path($${cmd}.pl)
 diff --git a/mkspecs/linux-oe-g++/qmake.conf b/mkspecs/linux-oe-g++/qmake.conf
 new file mode 100644
-index 0000000..c1837e6
+index 0000000000..c202c47fa1
 --- /dev/null
 +++ b/mkspecs/linux-oe-g++/qmake.conf
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,39 @@
 +#
 +# qmake configuration for linux-g++ with modifications for building with OpenEmbedded
 +#
@@ -95,7 +120,6 @@ index 0000000..c1837e6
 +# QMAKE_<TOOL> (moc, uic, rcc) are gone, overwrite only ar and strip
 +QMAKE_AR              = $$(OE_QMAKE_AR) cqs
 +QMAKE_STRIP           = $$(OE_QMAKE_STRIP)
-+QMAKE_WAYLAND_SCANNER = $$(OE_QMAKE_WAYLAND_SCANNER)
 +
 +include(../common/gcc-base-unix.conf)
 +
@@ -107,17 +131,14 @@ index 0000000..c1837e6
 +include(../common/g++-unix.conf)
 +
 +# tc settings from g++-base.conf
-+QMAKE_COMPILER = $$(OE_QMAKE_COMPILER) gcc
 +QMAKE_CC       = $$(OE_QMAKE_CC)
 +QMAKE_CXX      = $$(OE_QMAKE_CXX)
-+
-+QMAKE_CFLAGS_RELEASE_WITH_DEBUGINFO += $$(OE_QMAKE_CFLAGS)
 +
 +QMAKE_LINK         = $$(OE_QMAKE_LINK)
 +QMAKE_LINK_SHLIB   = $$(OE_QMAKE_LINK)
 +QMAKE_LINK_C       = $$(OE_QMAKE_LINK)
 +QMAKE_LINK_C_SHLIB = $$(OE_QMAKE_LINK)
-+
++QMAKE_CFLAGS_ISYSTEM =
 +# for the SDK
 +isEmpty(QMAKE_QT_CONFIG):QMAKE_QT_CONFIG = $$(OE_QMAKE_QT_CONFIG)
 +
@@ -127,7 +148,7 @@ index 0000000..c1837e6
 +load(qt_config)
 diff --git a/mkspecs/linux-oe-g++/qplatformdefs.h b/mkspecs/linux-oe-g++/qplatformdefs.h
 new file mode 100644
-index 0000000..5d22fb4
+index 0000000000..5d22fb4101
 --- /dev/null
 +++ b/mkspecs/linux-oe-g++/qplatformdefs.h
 @@ -0,0 +1 @@

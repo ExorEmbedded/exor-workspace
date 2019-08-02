@@ -1,0 +1,12 @@
+Index: xscreensaver-5.07/driver/subprocs.c
+===================================================================
+--- xscreensaver-5.07.orig/driver/subprocs.c
++++ xscreensaver-5.07/driver/subprocs.c
+@@ -1094,6 +1094,7 @@ screenhack_running_p (saver_info *si)
+ void
+ hack_environment (saver_info *si)
+ {
++  return;  /* hack disabled */
+ #if defined(HAVE_PUTENV) && defined(DEFAULT_PATH_PREFIX)
+   static const char *def_path = DEFAULT_PATH_PREFIX;
+   if (def_path && *def_path)

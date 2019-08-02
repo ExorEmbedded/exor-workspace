@@ -3,16 +3,17 @@ DESCRIPTION = "Xsplash is a small X11 application."
 LICENSE = "Proprietary"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=a26136a158a7bd489efe50329e38188a"
 
-PR = "r13"
+PR = "r17"
 SRCNAME = "ltools-${BPN}"
-
-SRCBRANCH = "exorint-1.x.x"
-SRCREV = "18fcd263254acb3cc5e0af7dad85ccb59e9e7bb8"
-
+SRCREV = "a880e7694ed92de15c74c1bb29a19318094d7582"
 inherit exorint-src
-
 inherit autotools
 inherit pkgconfig
+
+SRC_URI_append_us01-wu16 += "file://0001-add-backlight-support.patch \
+                             file://0002-remove-window-manager-decorations.patch \
+                             file://0003-launch-configos-with-long-press-of-F8key.patch \
+"
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 
@@ -29,6 +30,10 @@ do_configure_usom02() {
 
 do_configure_usom03() {
     CONFIGURE_AC=configure.ac oe_runconf TARGET=USOM03
+}
+
+do_configure_nsom01() {
+    CONFIGURE_AC=configure.ac oe_runconf TARGET=NSOM01
 }
 
 do_install() {

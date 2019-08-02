@@ -22,10 +22,14 @@ fi
 
 mount -t ext4 -o ro $CONFIGOSPARTITION $CONFIGOSTMPMNT
 
-if [ "$carrier_ver" == "WU16" ] && [ ! -e /etc/udev.tar ]
-then
-    cd /
-    tar cf /etc/udev.tar dev
+if [ "$carrier_ver" == "WU16" ]; then
+    if [ ! -e /etc/udev.tar ] || [ "$( cat /proc/version /proc/devices /proc/bus/input/devices )" != "$( cat /etc/udev/cache.data )" ]; then
+        cd /
+        rm -rf /etc/udev.tar /etc/udev/cache.data
+        tar cf /etc/udev.tar dev
+        sync
+        cat /proc/version /proc/devices /proc/bus/input/devices > /etc/udev/cache.data
+    fi
 fi
 
 

@@ -225,7 +225,7 @@ ifconfig lo up
 
 #################################################
 carrier_ver=$( exorint_ver_carrier )
-if [ "$carrier_ver" == "WU16" ] && [ -e /etc/udev.tar ]
+if [ "$carrier_ver" == "WU16" ] && [ -e /etc/udev.tar ] && [ "$( cat /proc/version /proc/devices /proc/bus/input/devices )" == "$( cat /etc/udev/cache.data )" ]
 then
     cd /
     tar xf /etc/udev.tar
@@ -235,7 +235,13 @@ else
     echo -e '\000\000\000\000' > /proc/sys/kernel/hotplug
     (/sbin/udevd -d &&
     udevadm control --env=STARTUP=1 &&
-    udevadm trigger --action=add --subsystem-match=input --subsystem-match=spi --subsystem-match=tty --subsystem-match=i2c --subsystem-match=iio &&
+    udevadm trigger --action=add \
+        --subsystem-match=input \
+        --subsystem-match=spi \
+        --subsystem-match=tty \
+        --subsystem-match=i2c \
+        --subsystem-match=iio \
+        --subsystem-match=usb &&
     udevadm trigger --action=change --property-match DRIVER=plxx_manager
     ) &
 fi

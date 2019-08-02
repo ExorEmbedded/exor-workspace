@@ -1,0 +1,16 @@
+diff --git a/xsplash.c b/xsplash.c
+index eeaaeaf..ee5844b 100644
+--- a/xsplash.c
++++ b/xsplash.c
+@@ -384,6 +384,11 @@ int main(int argc, char* argv[])
+     XSelectInput(display, window, LeaveWindowMask);
+     XMapRaised(display, window);
+ 
++    /* Remove title bar and frame window manager decorations */
++    Atom window_type = XInternAtom(display, "_NET_WM_WINDOW_TYPE",      False);
++    long value       = XInternAtom(display, "_NET_WM_WINDOW_TYPE_SPLASH", False);
++    XChangeProperty(display, window, window_type, XA_ATOM, 32, PropModeReplace, (unsigned char *) &value, 1 );
++
+ #ifndef US03
+     /* Actually display the image - failure is not critical (may be missing) */
+     draw_image(filename, display, window, gc, visual, display_width, display_height, display_depth);

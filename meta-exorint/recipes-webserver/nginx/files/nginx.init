@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/bash
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/sbin/nginx
 NAME=nginx
@@ -12,6 +12,8 @@ test -x $DAEMON || exit 0
 if [ -f /etc/default/nginx ] ; then
         . /etc/default/nginx
 fi
+
+[ -f /etc/exorint.funcs ] && . /etc/exorint.funcs
 
 set -e
 
@@ -33,11 +35,29 @@ mkstorage()
     chown www:www-data $STORAGE
 }
 
+setup_config()
+{
+    # if unprotected (optimized) update was interrupted, make sure we restore protected mode
+    case "$(readlink /etc/nginx/sites-enabled/jmuconfig)" in
+        *.unprotected)
+            ln -sf /etc/nginx/sites-available/jmuconfig /etc/nginx/sites-enabled/jmuconfig
+            ;;
+        *)
+            ;;
+    esac
+
+    # Make sure application proxy settings are up to date
+    if [ "$(exorint_ver_component)" == "M" ]; then
+        dbus-send --print-reply --system --dest=com.exor.JMLauncher '/' com.exor.JMLauncher.updateNginxConf
+    fi
+}
+
 case "$1" in
   start)
         echo -n "Starting $DESC: "
         create_volatile
         mkstorage
+        setup_config
         start-stop-daemon --start --quiet --pidfile $PID \
                 --name $NAME --exec $DAEMON -- $DAEMON_OPTS
         echo "$NAME."

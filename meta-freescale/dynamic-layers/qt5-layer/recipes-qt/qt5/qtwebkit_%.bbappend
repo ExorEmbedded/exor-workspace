@@ -1,4 +1,15 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+CFLAGS = " \
+    -DLINUX \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '-DEGL_API_FB -DEGL_API_WL', '', d)} \
+"
 
-SRC_URI += "file://0001-Fix-to-match-the-uniform-precision-qualifiers-in-ver.patch"
+CPPFLAGS = " \
+    -DLINUX \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '-DEGL_API_FB -DEGL_API_WL', '', d)} \
+"
+
+CXXFLAGS = " \
+    -DLINUX \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '-DEGL_API_FB -DEGL_API_WL', '', d)} \
+"
 

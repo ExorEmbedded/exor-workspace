@@ -9,14 +9,7 @@ PACKAGEGROUP_DISABLE_COMPLEMENTARY = "1"
 
 # Requires Ruby to work
 USE_RUBY = " \
-    qtquick1-dev \
-    qtquick1-mkspecs \
-    qtquick1-plugins \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'qtquick1-qmlplugins', '', d)} \
-    qttranslations-qtquick1 \
-    qtwebkit-dev \
-    qtwebkit-mkspecs \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'qtwebkit-qmlplugins', '', d)} \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'qtwebkit-dev', '', d)} \
 "
 
 # Requires Wayland to work
@@ -43,10 +36,10 @@ RDEPENDS_${PN} += " \
     qtbase-mkspecs \
     qtbase-plugins \
     qtbase-staticdev \
-    qttranslations-qt \
+    qtbase-tools \
     qttranslations-qtbase \
-    qttranslations-qtconfig \
     qttranslations-qthelp \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'qtcharts-qmlplugins', '', d)} \
     qtconnectivity-dev \
     qtconnectivity-mkspecs \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'qtconnectivity-qmlplugins', '', d)} \
@@ -56,7 +49,6 @@ RDEPENDS_${PN} += " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'qtdeclarative-qmlplugins', '', d)} \
     qtdeclarative-tools \
     qtdeclarative-staticdev \
-    qttranslations-qmlviewer \
     qttranslations-qtdeclarative \
     qtenginio-dev \
     qtenginio-mkspecs \
@@ -69,6 +61,8 @@ RDEPENDS_${PN} += " \
     qtlocation-plugins \
     ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'qtlocation-qmlplugins', '', d)} \
     qttranslations-qtlocation \
+    qtmqtt-dev \
+    qtmqtt-mkspecs \
     qtmultimedia-dev \
     qtmultimedia-mkspecs \
     qtmultimedia-plugins \
@@ -95,7 +89,6 @@ RDEPENDS_${PN} += " \
     qttools-mkspecs \
     qttools-staticdev \
     qttools-tools \
-    qttools-plugins \
     ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '${USE_WAYLAND}', '', d)} \
     ${USE_RUBY} \
     ${@bb.utils.contains('DISTRO_FEATURES', 'x11', '${USE_X11}', '', d)} \
@@ -115,6 +108,7 @@ RDEPENDS_${PN} += " \
     qtquickcontrols2 \
     qtquickcontrols2-dev \
     qtquickcontrols2-mkspecs \
+    qttools-plugins \
     qtwebengine \
     qtwebengine-dev \
     qtwebengine-mkspecs \
@@ -122,5 +116,20 @@ RDEPENDS_${PN} += " \
     qtvirtualkeyboard-dev \
     qtcharts \
     qtcharts-dev \
-    qtcharts-mkspecs \
+    qtdatavis3d \
+    qtdatavis3d-dev \
+    qtpurchasing \
+    qtpurchasing-dev \
+    qtopcua \
+    qtopcua-plugins \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'opengl', 'qtopcua-qmlplugins', '', d)} \
+    qtopcua-dev \
+    qtremoteobjects \
+    qtremoteobjects-plugins \
+    qtremoteobjects-dev \
+    qtscxml \
+    qtscxml-dev \
+    qtwebglplugin \
+    qtwebglplugin-dev \
+    qtwebglplugin-plugins \
 "

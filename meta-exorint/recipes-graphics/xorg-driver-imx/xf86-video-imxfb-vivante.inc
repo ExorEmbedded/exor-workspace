@@ -10,17 +10,16 @@ inherit autotools-brokensep update-rc.d pkgconfig
 
 DEPENDS += "virtual/xserver virtual/libx11 virtual/libgal-x11 imx-gpu-viv pixman"
 
-LIC_FILES_CHKSUM = "file://EXA/src/vivante_fbdev/vivante.h;endline=19;md5=95cf961a2ceacdf7cf43caef25766779"
+LIC_FILES_CHKSUM = "file://COPYING-MIT;md5=b5e9d9f5c02ea831ab3ecf802bb7c4f3"
 
 SRC_URI = "${FSL_MIRROR}/xserver-xorg-video-imx-viv-${PV}.tar.gz \
-            file://rc.autohdmi \
-            file://Remove-dix-internal-header-usage.patch"
+            file://rc.autohdmi"
 
 INITSCRIPT_PACKAGES = "xserver-xorg-extension-viv-autohdmi"
 INITSCRIPT_NAME = "rc.autohdmi"
 INITSCRIPT_PARAMS = "start 99 2 3 4 5 ."
 
-EXTRA_OEMAKE += "-C ${S} -d -f Makefile prefix=${D}/usr \
+EXTRA_OEMAKE += "-C ${S} -f Makefile prefix=${D}/usr \
                  sysroot=${STAGING_DIR_TARGET} \
                  BUSID_HAS_NUMBER=1 \
                  BUILD_IN_YOCTO=1 \
@@ -28,9 +27,7 @@ EXTRA_OEMAKE += "-C ${S} -d -f Makefile prefix=${D}/usr \
 
 CFLAGS += "-I${STAGING_INCDIR}/xorg \
            -I${STAGING_INCDIR}/drm \
-           -I../../DRI_1.10.4/src \
-           -Wno-error=implicit-function-declaration \
-           -Wno-error=implicit-int"
+           -I../../DRI_1.10.4/src"
 
 S = "${WORKDIR}/xserver-xorg-video-imx-viv-${PV}/"
 
@@ -78,8 +75,9 @@ FILES_${PN}-dbg = "${libdir}/*/*/*/.debug ${libdir}/.debug/libfsl_x11_ext${SOLIB
 
 FILES_xserver-xorg-extension-viv-autohdmi = " ${libdir}/libfsl_x11_ext${SOLIBS} ${exec_prefix}/bin/autohdmi ${sysconfdir}/init.d/rc.autohdmi"
 
-INSANE_SKIP_${PN} += "ldflags"
-INSANE_SKIP_xserver-xorg-extension-viv-autohdmi += "ldflags"
-
 PACKAGE_ARCH = "${MACHINE_SOCARCH}"
 COMPATIBLE_MACHINE = "(mx6)"
+
+
+INSANE_SKIP_${PN} = "ldflags"
+INSANE_SKIP_xserver-xorg-extension-viv-autohdmi = "ldflags"

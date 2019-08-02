@@ -1,0 +1,2 @@
+#Wifi pin for Ca16-uS01
+WIFI_GPIO=4

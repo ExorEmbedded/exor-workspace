@@ -1,10 +1,5 @@
 #! /bin/sh
 
-# Don't run in rc to avoid slowing down startup process (ntpsync can take
-# up to 10 seconds) this script is already launched in background by
-# /etc/network/if-up.d
-CALLER=`cat /proc/$PPID/status | grep ^Name: | awk '{print $2}'`
-[ "$CALLER" = "rc" ] && exit 0
 EXEC="/usr/sbin/ntpd"
 PIDFILE="/var/run/ntp.pid"
 TICKADJEXEC="/usr/sbin/tickadj"
@@ -14,6 +9,12 @@ TICKADJEXEC="/usr/sbin/tickadj"
 test -x $EXEC -a -r /etc/ntp.conf || exit 0
 # rcS contains TICKADJ
 test -r /etc/default/rcS && . /etc/default/rcS
+
+# If time synchronization mode is not set to NTP exit
+if [ -e /etc/time.conf ]; then
+	SYNC_MODE=`cat /etc/time.conf | grep ^mode | awk '{print $2}'`
+	[ ! "$SYNC_MODE" == "NTP" ] && exit 0
+fi
 
 # Functions to do individual actions
 settick(){
@@ -33,19 +34,10 @@ genconf(){
 }
 ntpsync(){
 	SERVER=`grep ^server /etc/ntp.conf | head -n 1 | awk '{print $2}'`
-	# if server is not reachable, don't bother starting NTP to avoid drift problems (#8951)
-	# (it will start again upon /etc/network/if-up.d)
 	ntpdate -u -b "${SERVER}" && hwclock -u -w
-	[ $? -eq 0 ] || exit 1
 }
 startdaemon(){
 	genconf
-	## The -g option allows ntpd to step the time to correct it just
-	## once.  The daemon will exit if the clock drifts too much after
-	## this.  If ntpd seems to disappear after a while assume TICKADJ
-	## above is set to a totally incorrect value.
-    # => we now use ntpdate instead of -g
-	ntpsync
 	echo -n "Starting ntpd: "
 	start-stop-daemon --start -x $EXEC -- -p $PIDFILE "$@"
 	echo "done"
@@ -60,14 +52,19 @@ stopdaemon(){
 case "$1" in
   start)
 
-        # If time synchronization mode is not set to NTP exit
-        if [ -e /etc/time.conf ]; then
-                SYNC_MODE=`cat /etc/time.conf | grep ^mode | awk '{print $2}'`
-                [ ! "$SYNC_MODE" == "NTP" ] && exit 0
-        fi
+	# Run the script in background when called at boot
+	CALLER=`cat /proc/$PPID/status | grep ^Name: | awk '{print $2}'`
+	if [ "$CALLER" = "rc" ]; then
+		(
+		settick
+		ntpsync
+		startdaemon
+		) &
+	else
+		settick
+		startdaemon
+	fi
 
-  	settick
-	startdaemon
 	;;
   stop)
   	stopdaemon

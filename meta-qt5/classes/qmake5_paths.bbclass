@@ -2,7 +2,7 @@
 # about conflicts with qt4, then you can add qmake5_paths.bbclass
 # to your distro layer and flatten all QT_DIR_NAME directories
 
-QT_DIR_NAME ?= "/qt5"
+QT_DIR_NAME ?= ""
 
 # This is useful for target recipes to reference native mkspecs
 QMAKE_MKSPEC_PATH_NATIVE = "${STAGING_LIBDIR_NATIVE}${QT_DIR_NAME}"
@@ -20,7 +20,6 @@ OE_QMAKE_PATH_DATA = "${datadir}"
 OE_QMAKE_PATH_BINS = "${bindir}"
 OE_QMAKE_PATH_LIBEXECS = "${libdir}${QT_DIR_NAME}/libexec"
 OE_QMAKE_PATH_PLUGINS = "${libdir}${QT_DIR_NAME}/plugins"
-OE_QMAKE_PATH_IMPORTS = "${libdir}${QT_DIR_NAME}/imports"
 OE_QMAKE_PATH_QML = "${libdir}${QT_DIR_NAME}/qml"
 OE_QMAKE_PATH_TRANSLATIONS = "${datadir}/translations"
 OE_QMAKE_PATH_DOCS = "${docdir}"

@@ -8,17 +8,17 @@ COMPATIBLE_MACHINE = "(usom01|usom02)"
 
 SRCNAME = "uboot"
 SRCBRANCH = "uboot2014.04_uS01"
-SRCREV = "a0787838c5a33c130fa6525bb4c0ee3e7f9f27d3"
+SRCREV = "8f9cb5886c3e250c4bae15056de7fccedd2f5be2"
 
 SRCBRANCH_ca16 = "uboot2014.04_uS01PGD_CA"
-SRCREV_ca16 = "1d5794ab082f18b587fb3091c968ede509a50e94"
+SRCREV_ca16 = "79b23fa8bc6a0f6d87b4f568106389fe0f1af04d"
 
 SRCBRANCH_au16 = "uboot2014.04_us01au"
-SRCREV_au16 = "57081a7176a5c773a95469df517de96e297deb4f"
+SRCREV_au16 = "f1004f5a7aa62738a8bce83d168978cacfdb0d2c"
 
 SRCNAME_usom02 = "ubootus02"
 SRCBRANCH_usom02 = "us02_etop"
-SRCREV_usom02 = "057343b8493f7997e09a8e52c71e78502c963800"
+SRCREV_usom02 = "3a89800eb99e70d2cdf0cd63f19f34fa59af7984"
 
 inherit exorint-src
 require ../u-boot.inc

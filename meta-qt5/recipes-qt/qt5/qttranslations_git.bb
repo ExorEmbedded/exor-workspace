@@ -8,11 +8,17 @@ LIC_FILES_CHKSUM = " \
 
 DEPENDS += "qtbase qttools-native"
 
+do_install_append() {
+    # remove qtquick1 translations - qtquick1 is gone
+    for transfile in `find ${D}/${OE_QMAKE_PATH_TRANSLATIONS} -name qt_*.qm ! -name qt_help_*.qm`; do
+        rm $transfile
+    done
+}
+
 PACKAGES =. " \
     ${PN}-assistant \
     ${PN}-designer \
     ${PN}-linguist \
-    ${PN}-qmlviewer \
     ${PN}-qtconnectivity \
     ${PN}-qtmultimedia \
     ${PN}-qtlocation \
@@ -22,13 +28,10 @@ PACKAGES =. " \
     ${PN}-qtwebsockets \
     ${PN}-qtwebengine \
     ${PN}-qtxmlpatterns \
-    ${PN}-qtconfig \
-    ${PN}-qtquick1 \
     ${PN}-qtscript \
     ${PN}-qtserialport \
     ${PN}-qtbase \
     ${PN}-qthelp \
-    ${PN}-qt \
 "
 
 FILES_${PN}-assistant = " \
@@ -41,10 +44,6 @@ FILES_${PN}-designer = " \
 
 FILES_${PN}-linguist = " \
     ${OE_QMAKE_PATH_TRANSLATIONS}/linguist_*.qm \
-"
-
-FILES_${PN}-qmlviewer = " \
-    ${OE_QMAKE_PATH_TRANSLATIONS}/qmlviewer_*.qm \
 "
 
 FILES_${PN}-qtconnectivity = " \
@@ -83,14 +82,6 @@ FILES_${PN}-qtxmlpatterns = " \
     ${OE_QMAKE_PATH_TRANSLATIONS}/qtxmlpatterns_*.qm \
 "
 
-FILES_${PN}-qtconfig = " \
-    ${OE_QMAKE_PATH_TRANSLATIONS}/qtconfig_*.qm \
-"
-
-FILES_${PN}-qtquick1 = " \
-    ${OE_QMAKE_PATH_TRANSLATIONS}/qtquick1_*.qm \
-"
-
 FILES_${PN}-qtscript = " \
     ${OE_QMAKE_PATH_TRANSLATIONS}/qtscript_*.qm \
 "
@@ -107,8 +98,4 @@ FILES_${PN}-qthelp = " \
     ${OE_QMAKE_PATH_TRANSLATIONS}/qt_help_*.qm \
 "
 
-FILES_${PN}-qt = " \
-    ${OE_QMAKE_PATH_TRANSLATIONS}/qt_*.qm \
-"
-
-SRCREV = "b3684346bd60983cecf2524f9f8081df514b5cb0"
+SRCREV = "8cd09ac290c75eeeb91c015e7d7791b15c0cac5e"

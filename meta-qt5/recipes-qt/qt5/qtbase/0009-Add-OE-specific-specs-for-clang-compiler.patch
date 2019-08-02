@@ -1,22 +1,22 @@
-From aa4792720ae1553549fa4228390251f03e6520e2 Mon Sep 17 00:00:00 2001
+From d1198f3f6f3293c46db913d63518f625162b3ce5 Mon Sep 17 00:00:00 2001
 From: Khem Raj <raj.khem@gmail.com>
 Date: Sun, 3 Sep 2017 09:11:44 -0700
 Subject: [PATCH] Add OE specific specs for clang compiler
 
 Signed-off-by: Khem Raj <raj.khem@gmail.com>
 ---
- mkspecs/linux-oe-clang/qmake.conf      | 43 ++++++++++++++++++++++++++++++++++
+ mkspecs/linux-oe-clang/qmake.conf      | 39 ++++++++++++++++++++++++++
  mkspecs/linux-oe-clang/qplatformdefs.h |  1 +
- 2 files changed, 44 insertions(+)
+ 2 files changed, 40 insertions(+)
  create mode 100644 mkspecs/linux-oe-clang/qmake.conf
  create mode 100644 mkspecs/linux-oe-clang/qplatformdefs.h
 
 diff --git a/mkspecs/linux-oe-clang/qmake.conf b/mkspecs/linux-oe-clang/qmake.conf
 new file mode 100644
-index 0000000..ffc9f05
+index 0000000000..db02ab5215
 --- /dev/null
 +++ b/mkspecs/linux-oe-clang/qmake.conf
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,39 @@
 +#
 +# qmake configuration for linux-g++ with modifications for building with OpenEmbedded
 +#
@@ -30,7 +30,6 @@ index 0000000..ffc9f05
 +# QMAKE_<TOOL> (moc, uic, rcc) are gone, overwrite only ar and strip
 +QMAKE_AR              = $$(OE_QMAKE_AR) cqs
 +QMAKE_STRIP           = $$(OE_QMAKE_STRIP)
-+QMAKE_WAYLAND_SCANNER = $$(OE_QMAKE_WAYLAND_SCANNER)
 +
 +include(../common/gcc-base-unix.conf)
 +
@@ -42,17 +41,14 @@ index 0000000..ffc9f05
 +include(../common/clang.conf)
 +
 +# tc settings from g++-base.conf
-+QMAKE_COMPILER = $$(OE_QMAKE_COMPILER) clang
 +QMAKE_CC       = $$(OE_QMAKE_CC)
 +QMAKE_CXX      = $$(OE_QMAKE_CXX)
-+
-+QMAKE_CFLAGS_RELEASE_WITH_DEBUGINFO += $$(OE_QMAKE_CFLAGS)
 +
 +QMAKE_LINK         = $$(OE_QMAKE_LINK)
 +QMAKE_LINK_SHLIB   = $$(OE_QMAKE_LINK)
 +QMAKE_LINK_C       = $$(OE_QMAKE_LINK)
 +QMAKE_LINK_C_SHLIB = $$(OE_QMAKE_LINK)
-+
++QMAKE_CFLAGS_ISYSTEM =
 +# for the SDK
 +isEmpty(QMAKE_QT_CONFIG):QMAKE_QT_CONFIG = $$(OE_QMAKE_QT_CONFIG)
 +
@@ -62,7 +58,7 @@ index 0000000..ffc9f05
 +load(qt_config)
 diff --git a/mkspecs/linux-oe-clang/qplatformdefs.h b/mkspecs/linux-oe-clang/qplatformdefs.h
 new file mode 100644
-index 0000000..880c927
+index 0000000000..880c927b21
 --- /dev/null
 +++ b/mkspecs/linux-oe-clang/qplatformdefs.h
 @@ -0,0 +1 @@

@@ -3,14 +3,14 @@ DESCRIPTION = "JMCloud device configuration web application"
 LICENSE = "Proprietary"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=a26136a158a7bd489efe50329e38188a"
 
-PR = "x146"
+PR = "x149"
 SRCNAME = "jmuconfig"
 
 SRCBRANCH = "rocko-1.x.x"
-SRCREV = "af9be42a7c461f851114a140beb7ecfa2b48a06a"
+SRCREV = "d7b608927339222661526b1102d925881a180945"
 
 SRCBRANCH_ca16 = "pgd_ca-1.x.x"
-SRCREV_ca16 = "20ac95aab7d1e2a4a21d15de2b851eb6d6a27800"
+SRCREV_ca16 = "b7a77dc592cdc20fc416340379ce61e75db35a1e"
 
 inherit allarch
 inherit exorint-src

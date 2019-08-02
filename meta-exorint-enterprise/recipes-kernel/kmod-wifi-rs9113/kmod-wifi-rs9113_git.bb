@@ -11,14 +11,15 @@ inherit exorint-src
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 RDEPENDS_${PN}-reset = "${PN}"
 
-SRCBRANCH = "redpine_1.6"
-PR = "x16.1"
-SRCREV = "28f848c4e6704fe7e350ab74a26cfc47284041c6"
+SRCBRANCH = "redpine_1.6.1"
+PR = "1.6.1.x4"
+SRCREV = "a89347244261b317ce82c5c8b720cb58f33d8f66"
 SRC_URI += "file://init.sh \
             file://reset_wifi.sh \
             file://wifi_gpio_us03_wu16 \
             file://wifi_gpio_us01_wu16 \
             file://wifi_gpio_us03_jsxx \
+            file://wifi_gpio_us01_ca16 \
             "
 
 DEPENDS += "libnl openssl"
@@ -44,6 +45,8 @@ do_install() {
     # install utilities
     install -d ${D}${sbindir}
     install -m 0755 release/onebox_util ${D}${sbindir}
+    install -m 0755 release/transmit ${D}${sbindir}/rs9113_transmit
+    install -m 0755 release/receive ${D}${sbindir}/rs9113_receive
 
     # install init script
     install -d ${D}${sysconfdir}/init.d
@@ -65,6 +68,11 @@ do_install_append_us03-wu16() {
 do_install_append_us01-wu16() {
     install -d ${D}${sysconfdir}/default/
     install -m 0644 ${WORKDIR}/wifi_gpio_us01_wu16 ${D}${sysconfdir}/default/wifi_gpio
+}
+
+do_install_append_us01-ca16() {
+    install -d ${D}${sysconfdir}/default/
+    install -m 0644 ${WORKDIR}/wifi_gpio_us01_ca16 ${D}${sysconfdir}/default/wifi_gpio
 }
 
 inherit update-rc.d

@@ -53,4 +53,14 @@ KERNEL=="iio:device[0-9]", SUBSYSTEM=="iio" ATTR{name}=="LIS331" PROGRAM="/bin/s
         /bin/ln -s /sys/bus/iio/devices/iio\:device%n/in_accel_z_raw   /dev/accel/in_raw_z ; \
 '"
 
+##################
+# SPI ADC
+KERNEL=="iio:device[0-9]", SUBSYSTEM=="iio" ATTR{name}=="mcp3204" PROGRAM="/bin/sh -c '\
+        mkdir /dev/adc/ && \
+        /bin/ln -s /sys/bus/iio/devices/iio\:device%n/in_voltage0_raw   /dev/adc/in_voltage0_raw ; \
+        /bin/ln -s /sys/bus/iio/devices/iio\:device%n/in_voltage1_raw   /dev/adc/in_voltage1_raw ; \
+        /bin/ln -s /sys/bus/iio/devices/iio\:device%n/in_voltage2_raw   /dev/adc/in_voltage2_raw ; \
+        /bin/ln -s /sys/bus/iio/devices/iio\:device%n/in_voltage3_raw   /dev/adc/in_voltage3_raw ; \
+'"
+
 

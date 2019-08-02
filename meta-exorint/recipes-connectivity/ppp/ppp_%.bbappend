@@ -1,6 +1,6 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
-PR := "${PR}.x6"
+PR := "${PR}.x7"
 
 SRC_URI += "file://gprs.sh"
 SRC_URI += "file://provider.sh"

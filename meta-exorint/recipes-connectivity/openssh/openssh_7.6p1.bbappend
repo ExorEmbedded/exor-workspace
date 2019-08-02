@@ -1,6 +1,6 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-${PV}:"
 
-PR := "${PR}.x0"
+PR := "${PR}.x1"
 
 # Disabled by default
 INITSCRIPT_PARAMS_${PN}-sshd = "start 10 . stop 10 ."

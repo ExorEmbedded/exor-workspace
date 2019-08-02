@@ -1,7 +1,11 @@
 #!/bin/sh
 
+pidof EPAD >/dev/null || exit 0
+
 # Interface up notification
 dbus-send --print-reply --system --dest=com.exor.EPAD "/NetworkManager" com.exor.EPAD.NetworkManager.interfaceStateNotification string:"${PPP_IFACE}" int32:1
 
 # Save timestamp to keep track of connection time
 dbus-send --print-reply --system --dest=com.exor.EPAD '/' com.exor.EPAD.setVolatileParameter string:'services/mobile/conn/startTime' string:"$(date +%s)"
+
+exit 0

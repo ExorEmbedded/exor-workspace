@@ -1,4 +1,4 @@
-PR := "${PR}.x1"
+PR := "${PR}.x2"
 
 inherit gsettings
 

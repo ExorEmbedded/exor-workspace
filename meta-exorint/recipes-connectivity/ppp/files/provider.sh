@@ -3,6 +3,12 @@
 COM_DEVICE=`/usr/bin/modem com`
 [ $? -ne 0 ] && exit 1
 
+BAUD_RATE=`sys_params -l services/mobile/baud 2>/dev/null`  # EPAD default
+[ -z ${BAUD_RATE} ] && exit 1
+
+PPP_MTUMRU=`sys_params -l services/mobile/mtumru 2>/dev/null` # EPAD default
+[ -z ${PPP_MTUMRU} ] && exit 1
+
 cat << EOF
 # example configuration for a dialup connection authenticated with PAP or CHAP
 #
@@ -24,7 +30,10 @@ connect "/usr/sbin/chat -v -f /etc/chatscripts/gprs"
 # Serial device to which the modem is connected.
 ${COM_DEVICE}
 # Speed of the serial line.
-3000000
+${BAUD_RATE}
+
+mru ${PPP_MTUMRU}
+mtu ${PPP_MTUMRU}
 
 # Assumes that your IP address is allocated dynamically by the ISP.
 noipdefault
@@ -47,8 +56,8 @@ ktune
 nodeflate
 EOF
 
-AUTH_TYPE=`sys_params services/mobile/auth/type 2>/dev/null`
-AUTH_USER=`sys_params services/mobile/auth/user 2>/dev/null`
+AUTH_TYPE=`sys_params -l services/mobile/auth/type 2>/dev/null`
+AUTH_USER=`sys_params -l services/mobile/auth/user 2>/dev/null`
 case "${AUTH_TYPE}" in
     1|2) # PAP, CHAP
         [ -z ${AUTH_USER} ] || echo "user ${AUTH_USER}"

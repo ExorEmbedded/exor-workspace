@@ -1,5 +1,23 @@
---- xserver-xorg-video-imx-viv-5.0.11.p4.4/EXA/src/vivante_extension/vivante_ext.c	2015-02-13 19:27:43.000000000 +0100
-+++ xserver-xorg-video-imx-viv-5.0.11.p4.4b/EXA/src/vivante_extension/vivante_ext.c	2016-11-21 13:28:18.075782595 +0100
+From 80c419dddf6483873503d90694c4b4ae34ffa5e4 Mon Sep 17 00:00:00 2001
+From: Otavio Salvador <otavio@ossystems.com.br>
+Date: Wed, 2 Dec 2015 13:50:57 +0000
+Subject: [PATCH] Remove 'dix' internal header usage
+Organization: O.S. Systems Software LTDA.
+
+The 'swaprep.h' is an internal Xorg header and is not being installed
+anymore. The swap features are provided by the 'misc.h' header now.
+
+Upstream-Status: Pending
+
+Signed-off-by: Otavio Salvador <otavio@ossystems.com.br>
+---
+ EXA/src/vivante_extension/vivante_ext.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/EXA/src/vivante_extension/vivante_ext.c b/EXA/src/vivante_extension/vivante_ext.c
+index 0d1085b..1ffbb1b 100644
+--- a/EXA/src/vivante_extension/vivante_ext.c
++++ b/EXA/src/vivante_extension/vivante_ext.c
 @@ -40,7 +40,6 @@
  #include "cursorstr.h"
  #include "scrnintstr.h"
@@ -8,3 +26,6 @@
  #include "drm.h"
  #include "xf86Module.h"
  #include "globals.h"
+-- 
+2.1.4
+

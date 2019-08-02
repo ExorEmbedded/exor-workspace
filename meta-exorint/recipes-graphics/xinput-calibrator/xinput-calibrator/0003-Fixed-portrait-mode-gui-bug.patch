@@ -1,0 +1,38 @@
+From c7341f768576ab979640c0e74d23fceb25b0c5e8 Mon Sep 17 00:00:00 2001
+From: Luigi Scagnet Exor Int <luigi.scagnet@exorint.com>
+Date: Tue, 30 Jan 2018 18:44:25 +0100
+Subject: [PATCH] Fixed portrait mode gui bug
+
+---
+ src/gui/x11.cpp | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/gui/x11.cpp b/src/gui/x11.cpp
+index fd8e341..023a001 100644
+--- a/src/gui/x11.cpp
++++ b/src/gui/x11.cpp
+@@ -464,6 +464,8 @@ void GuiCalibratorX11::draw_message(const char* msg)
+     XDrawString(display, win, gc, x, y, msg, strlen(msg));
+ }
+ 
++#define SQUARE_X_SIZE   152
++#define SQUARE_Y_SIZE   38
+ void GuiCalibratorX11::draw_fixed_square_message(const char* msg)
+ {
+     int text_height = font_info->ascent + font_info->descent;
+@@ -473,8 +475,11 @@ void GuiCalibratorX11::draw_fixed_square_message(const char* msg)
+     int y = (display_height - text_height) / 2 + clock_radius + 60;
+     XSetForeground(display, gc, pixel[BLACK]);
+     XSetLineAttributes(display, gc, 2, LineSolid, CapRound, JoinRound);
+-    XDrawRectangle(display, win, gc, 324, 320, 152, 38);
+ 
++    XDrawRectangle(display, win, gc, ((display_width /2)-(SQUARE_X_SIZE/2)),
++                                     ((display_height/2)-(SQUARE_Y_SIZE/2)) + clock_radius + 50,
++                                     SQUARE_X_SIZE,
++                                     SQUARE_Y_SIZE);
+     XDrawString(display, win, gc, x, y, msg, strlen(msg));
+ }
+ 
+-- 
+2.11.0
+

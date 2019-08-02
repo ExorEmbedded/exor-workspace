@@ -1,8 +1,12 @@
 #!/bin/sh
 
+pidof EPAD >/dev/null || exit 0
+
 # Interface down notification
 dbus-send --print-reply --system --dest=com.exor.EPAD "/NetworkManager" com.exor.EPAD.NetworkManager.interfaceStateNotification string:"${PPP_IFACE}" int32:0
 
 # Reset counters
 dbus-send --print-reply --system --dest=com.exor.EPAD '/' com.exor.EPAD.setVolatileParameter string:'services/mobile/conn/startTime' string:""
 dbus-send --print-reply --system --dest=com.exor.EPAD '/' com.exor.EPAD.setVolatileParameter string:'services/mobile/conn/rxtx' string:""
+
+exit 0

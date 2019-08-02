@@ -6,10 +6,10 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 inherit exorint-src
 
-PR = "r0"
+PR = "r1"
 
 SRCNAME = "ltools"
-SRCREV = "f83978844d64b91c3cc85329cb72f0eee45941e8"
+SRCREV = "2ded27d75261730e327f564989bdba08281a05d5"
 SRCBRANCH = "microsom-imx"
 
 SRC_URI += "file://pciexpressmodel.hex"

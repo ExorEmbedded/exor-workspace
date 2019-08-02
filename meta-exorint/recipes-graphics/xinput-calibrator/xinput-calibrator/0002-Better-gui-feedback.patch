@@ -1,0 +1,161 @@
+From c6680f145981b7bc561512fc27a50533f7ab213c Mon Sep 17 00:00:00 2001
+From: Luigi Scagnet Exor Int <luigi.scagnet@exorint.com>
+Date: Fri, 15 Dec 2017 17:18:59 +0100
+Subject: [PATCH] Better gui feedback
+
+---
+ src/gui/x11.cpp | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++------
+ src/gui/x11.hpp |  2 ++
+ 2 files changed, 70 insertions(+), 8 deletions(-)
+
+diff --git a/src/gui/x11.cpp b/src/gui/x11.cpp
+index a8a31a6..fd8e341 100644
+--- a/src/gui/x11.cpp
++++ b/src/gui/x11.cpp
+@@ -326,7 +326,7 @@ bool GuiCalibratorX11::on_button_press(int x, int y)
+     
+     // Force a redraw
+     redraw();
+-    draw_message("Hold... ");
++    draw_fixed_square_message("Hold.    ");
+ 
+     return true;
+ }
+@@ -343,8 +343,42 @@ bool GuiCalibratorX11::on_button_hold(int x, int y)
+     if (!success) {
+         XClearWindow(display, win);
+         time_elapsed = 0;
+-        draw_message("Mis-click detected. Restart...");
++        draw_fixed_square_message("Mis-click detected. Restart...");
+     }
++	switch(calibrator->get_calib_filter_pivot())
++	{
++		case 0:
++		case 1:
++		case 2:
++		    XClearWindow(display, win);
++		    redraw();
++		    draw_fixed_square_message("Hold.    ");
++		    break;
++		case 3:
++		case 4:
++		case 5:
++		    XClearWindow(display, win);
++		    redraw();
++		    draw_fixed_square_message("Hold..   ");
++		    break;
++		case 6:
++		case 7:
++		case 8:
++		    XClearWindow(display, win);
++		    redraw();
++		    draw_fixed_square_message("Hold...  ");
++		    break;
++		case 9:
++		    XClearWindow(display, win);
++		    redraw();
++		    draw_fixed_square_message("Hold.... ");
++		    break;
++		default:
++		    XClearWindow(display, win);
++		    redraw();
++		    draw_fixed_square_message("Ok. Next point. ");
++		    break;
++	}
+ 
+     if( calibrator->get_calib_filter_pivot() >= CALIBRATION_FILTER_SIZE)
+     {
+@@ -364,13 +398,23 @@ bool GuiCalibratorX11::on_button_hold(int x, int y)
+         // Force a redraw
+         XClearWindow(display, win);
+         redraw();
+-        draw_message("Ok. Next point. ");
++        draw_fixed_square_message("Ok. Next point. ");
+         calibrator->new_click_ready();
+         press_calib_status = false;
+     }
+     return true;
+ }
+ 
++void GuiCalibratorX11::on_button_release()
++{
++    press_calib_status = false;
++	calibrator->new_click_ready();
++    // Force a redraw
++    XClearWindow(display, win);
++    redraw();
++    draw_fixed_square_message("Press & hold red cross");
++}
++
+ bool GuiCalibratorX11::on_button_press_event(XEvent event)
+ {
+     // Clear window, maybe a bit overdone, but easiest for me atm.
+@@ -382,7 +426,7 @@ bool GuiCalibratorX11::on_button_press_event(XEvent event)
+     bool success = calibrator->add_click(event.xbutton.x, event.xbutton.y);
+ 
+     if (!success && calibrator->get_numclicks() == 0) {
+-        draw_message("Mis-click detected, restarting...");
++        draw_fixed_square_message("Mis-click detected, restarting...");
+     }
+ 
+     // Are we done yet?
+@@ -420,6 +464,20 @@ void GuiCalibratorX11::draw_message(const char* msg)
+     XDrawString(display, win, gc, x, y, msg, strlen(msg));
+ }
+ 
++void GuiCalibratorX11::draw_fixed_square_message(const char* msg)
++{
++    int text_height = font_info->ascent + font_info->descent;
++    int text_width = XTextWidth(font_info, msg, strlen(msg));
++
++    int x = (display_width - text_width) / 2;
++    int y = (display_height - text_height) / 2 + clock_radius + 60;
++    XSetForeground(display, gc, pixel[BLACK]);
++    XSetLineAttributes(display, gc, 2, LineSolid, CapRound, JoinRound);
++    XDrawRectangle(display, win, gc, 324, 320, 152, 38);
++
++    XDrawString(display, win, gc, x, y, msg, strlen(msg));
++}
++
+ void GuiCalibratorX11::give_timer_signal()
+ {
+     if (instance != NULL) {
+@@ -459,16 +517,18 @@ void GuiCalibratorX11::give_timer_signal()
+                     if (event.xexpose.count != 0)
+                         break;
+                     instance->on_expose_event();
++                    //Used on_button_release for init gui msgs
++                    instance->on_button_release();
+                     break;
+ 
+                 case ButtonPress:
+                     //instance->on_button_press_event(event);
+-		    press_calib_status = true;
+-		    instance->on_button_press(event.xbutton.x, event.xbutton.y);
+-		    break;
++                    press_calib_status = true;
++                    instance->on_button_press(event.xbutton.x, event.xbutton.y);
++                    break;
+ 
+                 case ButtonRelease:
+-                    press_calib_status = false;
++                    instance->on_button_release();
+                     break;
+ 
+                 case KeyPress:
+diff --git a/src/gui/x11.hpp b/src/gui/x11.hpp
+index 5ddb320..a9c5769 100644
+--- a/src/gui/x11.hpp
++++ b/src/gui/x11.hpp
+@@ -66,6 +66,8 @@ protected:
+     bool on_button_press_event(XEvent event);
+     bool on_button_press(int x, int y);
+     bool on_button_hold(int x, int y);
++    void on_button_release();
++    void draw_fixed_square_message(const char* msg);
+     // Helper functions
+     void set_display_size(int width, int height);
+     void redraw();
+-- 
+2.1.4
+

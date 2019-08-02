@@ -4,6 +4,7 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 # redefine boot order
 INITSCRIPT_PARAMS = "start 80 5 2 . stop 99 0 1 6 ."
+INITSCRIPT_PARAMS_wu16 = "start 95 S 2 . stop 99 0 1 6 ."
 
 do_install_append () {
 

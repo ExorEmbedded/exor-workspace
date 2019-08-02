@@ -5,13 +5,18 @@ then
 	exit 0;
 fi
 
-[ -e /etc/exorint.funcs ] && . /etc/exorint.funcs
+. /etc/exorint.funcs
 
 # trigger the sorted events
 echo -e '\000\000\000\000' > /proc/sys/kernel/hotplug
 /sbin/udevd -d
 udevadm control --env=STARTUP=1
-udevadm trigger --action=add --subsystem-match=input --subsystem-match=spi --subsystem-match=tty --subsystem-match=i2c
+udevadm trigger --action=add \
+        --subsystem-match=input \
+        --subsystem-match=spi \
+        --subsystem-match=tty \
+        --subsystem-match=i2c \
+        --subsystem-match=usb
 udevadm trigger --action=change --property-match DRIVER=plxx_manager
 
 ifconfig lo up
@@ -31,11 +36,18 @@ if [ ! -f "${CERT}" ] || [ ! -f "${KEY}" ] || [ ! -f "${CSR}" ]; then
    rm -rf "${SSL_DIR}" "${SSL_DIR_SYM}"
    mkdir -p "$( dirname $CERT )" "$( dirname $KEY )"
 
-   SUBJECT="/CN=$( hostname )"
+   HOSTNAME="$(hostname)"
+   SUBJECT="/CN=${HOSTNAME}"
 
+   SSL_CONFIG="/tmp/openssl.cnf"
+   printf "distinguished_name = req_dn\n[req_dn]\n" >> "${SSL_CONFIG}"
+   printf "[SAN]\nsubjectAltName=DNS:${HOSTNAME},DNS:${HOSTNAME}.local\n" >> "${SSL_CONFIG}"
    openssl req -x509 -nodes -days 36500 -newkey rsa:2048 -sha512 \
       -subj "${SUBJECT}" \
+      -config "${SSL_CONFIG}" \
+      -extensions SAN \
       -keyout "${KEY}" -out "${CERT}"
+   rm "${SSL_CONFIG}"
 
    openssl req -new -key "${KEY}" -sha512 -out "${CSR}" -subj "${SUBJECT}"
 

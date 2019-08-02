@@ -1,0 +1,116 @@
+diff --git a/common.h b/common.h
+index 9e6b925..ecfbd84 100644
+--- a/common.h
++++ b/common.h
+@@ -48,6 +48,18 @@
+ #define debug(fmt, args...)
+ #endif
+ 
++/***** Key codes *****/
++#define KEY_F1          67
++#define KEY_F2          68
++#define KEY_F3          69
++#define KEY_F4          70
++#define KEY_F5          71
++#define KEY_F6          72
++#define KEY_F7          73
++#define KEY_F8          74
++#define KEY_F9          75
++#define KEY_F10         76
++
+ enum {
+     NO_ERR = 0,
+     ERR_FOPEN_OVERLAY,
+diff --git a/xsplash.c b/xsplash.c
+index fe19ec3..92677ea 100644
+--- a/xsplash.c
++++ b/xsplash.c
+@@ -20,6 +20,9 @@
+ #define SEEPROM_I2C_BUS                 "i2c-0"
+ #define I2CSEEPROMDEVICE                "/sys/class/i2c-dev/"SEEPROM_I2C_BUS"/device/"SEEPROM_I2C_ADDRESS"/eeprom"
+ #define BLDIMM_POS                      128
++#define LINUX_REBOOT_CMD_RESTART        0x01234567
++#define NVRAMDEVICE                     "/sys/class/rtc/rtc0/device/nvram"
++#define NVRAM_MAGIC                     0xbc
+ 
+ #ifdef US03
+ #warning "Def Us03"
+@@ -27,6 +30,7 @@
+ #warning "NOT Def Us03"
+ #endif
+ 
++static int f8_pressed = 0;
+ static struct option long_options[] =
+ {
+ {"file",            required_argument,  0, 'f'},
+@@ -154,6 +158,24 @@ void UpdateBrightness()
+     SetBrightness(brightnessdevice, &target_brightness);
+ }
+ 
++
++static int setbootcounter_nvram(unsigned char val)
++{
++    unsigned char buff[2];
++    buff[0] = NVRAM_MAGIC;
++    buff[1] = val;
++    FILE* fp;
++    if((fp = fopen(NVRAMDEVICE, "w"))==NULL)
++    {
++        fprintf(stderr,"setbootcounter cannot open file -> %s \n",NVRAMDEVICE);
++        return -1;
++    }
++    fwrite(buff,1,2,fp);
++    fflush(fp); //Just in case ... but not really needed
++    fclose(fp);
++    return 0;
++}
++
+ static void convert_pixel24(char *rgb32_out, int rgb16_in, int x, int y, int width)
+ {
+     uint8_t red;
+@@ -413,11 +435,28 @@ static int run_loop(Display *display, int usecs)
+         }
+ 
+         XNextEvent(display, &event);
++        switch (event.type)
++        {
++            case KeyPress:
++                if( KEY_F8 == event.xkey.keycode )
++                    f8_pressed ++;
++                printf( "KeyPress: %x --> %d --- %x\n", event.xkey.keycode, f8_pressed, event.xkey.state );
++            break;
+ 
+-        switch(event.type) {
+-        default:
+-            done = 1;
++            case KeyRelease:
++                if( f8_pressed >= 8 )
++                {
++                    setbootcounter_nvram(100);
++                    sync();
++                    reboot(LINUX_REBOOT_CMD_RESTART);
++                    while(1)
++                        usleep(200);
++                }
+             break;
++
++            default:
++                done = 1;
++                break;
+         }
+     }
+ 
+@@ -517,7 +556,12 @@ int main(int argc, char* argv[])
+     gc = XCreateGC(display, window, 0, 0);
+ 
+     /* Select input devices to listen to: */
+-    XSelectInput(display, window, LeaveWindowMask);
++#ifndef US03
++    XSelectInput(display, window, LeaveWindowMask | KeyPressMask | KeyReleaseMask );
++#else
++    /* Two different cases, because not possible to test us03 and overlay now */
++    XSelectInput(display, window, LeaveWindowMask );
++#endif
+     XMapRaised(display, window);
+ 
+     /* Remove title bar and frame window manager decorations */

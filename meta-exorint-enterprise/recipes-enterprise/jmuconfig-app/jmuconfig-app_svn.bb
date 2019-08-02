@@ -4,8 +4,8 @@ LICENSE = "Proprietary"
 FILESEXTRAPATHS += "${THISDIR}/files"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=a26136a158a7bd489efe50329e38188a"
 
-PR = "r29"
-SRCREV = "r64411"
+PR = "r33"
+SRCREV = "r71922"
 S = "${WORKDIR}/hmibrowser"
 
 #inherit exorint-src

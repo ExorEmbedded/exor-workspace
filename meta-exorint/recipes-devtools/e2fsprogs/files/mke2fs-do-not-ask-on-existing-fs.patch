@@ -1,0 +1,20 @@
+diff -uNr git/lib/support/plausible.c git2/lib/support/plausible.c
+--- git/lib/support/plausible.c	2019-03-20 13:58:13.122620720 +0100
++++ git2/lib/support/plausible.c	2019-03-20 13:58:47.690620353 +0100
+@@ -244,6 +244,7 @@
+ 		blkid_put_cache(cache);
+ 	}
+ 
++/*
+ 	if (fs_type) {
+ 		if (fs_label)
+ 			printf(_("%s contains a %s file system "
+@@ -281,7 +282,7 @@
+ 		return !has_magic;
+ 	}
+ #endif
+-
++*/
+ 	ret = check_partition_table(device);
+ 	if (ret >= 0)
+ 		return ret;

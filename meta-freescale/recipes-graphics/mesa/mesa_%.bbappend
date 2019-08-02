@@ -19,7 +19,9 @@ GALLIUMDRIVERS_append_use-mainline-bsp = ",etnaviv,imx"
 
 # FIXME: Dirty hack to allow use of Vivante GPU libGL binary
 do_install_append_imxgpu3d () {
-    rm -f ${D}${libdir}/libGL.*
+    rm -f ${D}${libdir}/libGL.* \
+          ${D}${includedir}/GL/gl.h \
+          ${D}${includedir}/GL/glext.h
 }
 
 do_install_append_imxgpu2d () {

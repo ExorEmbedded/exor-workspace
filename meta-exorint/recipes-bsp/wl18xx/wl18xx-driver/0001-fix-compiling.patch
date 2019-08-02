@@ -1,0 +1,27 @@
+diff --git a/build_wl18xx.sh b/build_wl18xx.sh
+index 73c8db8..5c1b757 100755
+--- a/build_wl18xx.sh
++++ b/build_wl18xx.sh
+@@ -1,6 +1,6 @@
+ export PATH__ROOT=`pwd`    
+-. configuration.sh    
+-. setup-env
++. "$PATH__ROOT/configuration.sh"
++. "$PATH__ROOT/setup-env"
+ # Pretty colors
+ GREEN="\033[01;32m"
+ YELLOW="\033[01;33m"
+diff --git a/configuration.sh b/configuration.sh
+index 066bad7..abb1a67 100755
+--- a/configuration.sh
++++ b/configuration.sh
+@@ -3,7 +3,8 @@ fs_skeleton.tbz2
+ )
+ 
+ toolchain=(
+-http://releases.linaro.org/15.05/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2015.05-x86_64_arm-linux-gnueabihf.tar.xz
++#http://releases.linaro.org/15.05/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2015.05-x86_64_arm-linux-gnueabihf.tar.xz
++http://releases.linaro.org/components/toolchain/binaries/4.9-2016.02/arm-linux-gnueabihf/gcc-linaro-4.9-2016.02-x86_64_arm-linux-gnueabihf.tar.xz
+ )
+ 
+ paths=(

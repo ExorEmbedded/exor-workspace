@@ -3,11 +3,11 @@ DESCRIPTION = "IBTP Service for Exor specific linux hardware and BSP"
 LICENSE = "Proprietary"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=a26136a158a7bd489efe50329e38188a"
 
-PR = "r9"
+PR = "r11"
 
-SRCNAME = "${BPN}"
+SRCPROJECT = "jmobile"
 SRCBRANCH = "master"
-SRCREV = "cd7b33a365818ab4e69fb0a519550deb48e109de"
+SRCREV = "324e2aa61858c7c9d917db3484c8d42b19b661c6"
 
 inherit exorint-src qmake2 update-rc.d
 

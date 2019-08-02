@@ -36,8 +36,9 @@ IMAGE_INSTALL += "memtester"
 IMAGE_INSTALL_append_usom01 += "bootloader-env"
 IMAGE_INSTALL_append_usom03 += "bootloader-imx6d-env"
 
-# Check Touchscreen for eTop700
+# Check Touchscreen for eTop700/JSmart
 IMAGE_INSTALL_append_us03-hsxx += "hsxx-checks"
+IMAGE_INSTALL_append_us03-jsxx += "hsxx-checks"
 
 # Vivante gpu driver for imx platforms
 IMAGE_INSTALL_append_usom03 = " xf86-video-imxfb-vivante imx-gpu-viv"

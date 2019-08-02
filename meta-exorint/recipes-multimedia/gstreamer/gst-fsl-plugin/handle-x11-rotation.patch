@@ -1,0 +1,245 @@
+diff -uNr gst-fsl-plugins-4.0.3.orig/src/misc/v4l_sink/src/mfw_gst_v4l.c gst-fsl-plugins-4.0.3/src/misc/v4l_sink/src/mfw_gst_v4l.c
+--- gst-fsl-plugins-4.0.3.orig/src/misc/v4l_sink/src/mfw_gst_v4l.c	2018-11-16 09:57:32.301236057 +0100
++++ gst-fsl-plugins-4.0.3/src/misc/v4l_sink/src/mfw_gst_v4l.c	2018-11-16 16:42:26.699713427 +0100
+@@ -1438,6 +1438,7 @@
+           return retval;
+       }
+   }
++
+   if (v4l_info->axis_left >= v4l_info->fullscreen_width \
+       || v4l_info->axis_top >= v4l_info->fullscreen_height) {
+     g_print (RED_STR
+@@ -1446,7 +1447,6 @@
+   }
+ 
+   if (!(v4l_info->stretch)) {
+-
+     if (v4l_info->rotate == 90
+         || v4l_info->rotate == 270) {
+       video_width = v4l_info->height;
+diff -uNr gst-fsl-plugins-4.0.3.orig/src/misc/v4l_sink/src/mfw_gst_v4lsink.c gst-fsl-plugins-4.0.3/src/misc/v4l_sink/src/mfw_gst_v4lsink.c
+--- gst-fsl-plugins-4.0.3.orig/src/misc/v4l_sink/src/mfw_gst_v4lsink.c	2018-11-16 09:57:32.302236057 +0100
++++ gst-fsl-plugins-4.0.3/src/misc/v4l_sink/src/mfw_gst_v4lsink.c	2018-11-16 10:04:03.043231904 +0100
+@@ -386,7 +386,17 @@
+   MFW_GST_V4LSINK_INFO_T *v4l_info = MFW_GST_V4LSINK (overlay);
+   GstXInfo *gstXInfo;
+ 
++  fbdev_rotation = 0;
+ 
++  FILE* fd = fopen("/etc/rotation", "r");
++  if (fd) {
++
++    char rotation[4];
++    fgets (rotation, sizeof(rotation), fd);
++    fclose(fd);
++    fbdev_rotation = strtol(rotation, NULL, 10);
++
++  }
+ 
+   /* If we already use that window return */
+   if (xwindow_id == 0) {
+diff -uNr gst-fsl-plugins-4.0.3.orig/src/misc/v4l_sink/src/mfw_gst_v4lsink.h gst-fsl-plugins-4.0.3/src/misc/v4l_sink/src/mfw_gst_v4lsink.h
+--- gst-fsl-plugins-4.0.3.orig/src/misc/v4l_sink/src/mfw_gst_v4lsink.h	2018-11-16 09:57:32.301236057 +0100
++++ gst-fsl-plugins-4.0.3/src/misc/v4l_sink/src/mfw_gst_v4lsink.h	2018-11-15 16:02:33.355921582 +0100
+@@ -317,8 +317,9 @@
+   gboolean enable_deinterlace;
+ } MFW_GST_V4LSINK_INFO_T;
+ 
+-
+-
++#ifdef USE_X11
++  guint fbdev_rotation;
++#endif
+ 
+ typedef struct MFW_GST_V4LSINK_INFO_CLASS_S
+ {
+diff -uNr gst-fsl-plugins-4.0.3.orig/src/misc/v4l_sink/src/mfw_gst_v4l_xlib.c gst-fsl-plugins-4.0.3/src/misc/v4l_sink/src/mfw_gst_v4l_xlib.c
+--- gst-fsl-plugins-4.0.3.orig/src/misc/v4l_sink/src/mfw_gst_v4l_xlib.c	2018-11-16 09:57:32.301236057 +0100
++++ gst-fsl-plugins-4.0.3/src/misc/v4l_sink/src/mfw_gst_v4l_xlib.c	2018-11-16 10:01:44.094233381 +0100
+@@ -156,25 +156,58 @@
+     if ((!gstXInfo) || (!gstXInfo->xwindow))
+         return FALSE;
+ 
++    gint x, y, width, height, rem;
+ 
+     while (1) {
+         mfw_gst_x11_get_geometry(gstXInfo);
+-        
+-        if ((v4l_info->axis_left == gstXInfo->xwindow->x) 
+-            &&(v4l_info->axis_top == gstXInfo->xwindow->y )
+-            && (v4l_info->disp_width == gstXInfo->xwindow->width) 
+-            && (v4l_info->disp_height == gstXInfo->xwindow->height))
++
++        if (fbdev_rotation == 90) {
++            width = gstXInfo->xwindow->height;
++            height = gstXInfo->xwindow->width;
++            x = gstXInfo->xwindow->y;
++            y = v4l_info->fullscreen_height - (height + gstXInfo->xwindow->x);
++        }
++        else if (fbdev_rotation == 270) {
++            width = gstXInfo->xwindow->height;
++            height = gstXInfo->xwindow->width;
++            x = v4l_info->fullscreen_width - (width + gstXInfo->xwindow->y);
++            y = gstXInfo->xwindow->x;
++        }
++        else if (fbdev_rotation == 180) {
++            width = gstXInfo->xwindow->width;
++            height = gstXInfo->xwindow->height;
++            x = v4l_info->fullscreen_width - (width + gstXInfo->xwindow->x);
++            y = v4l_info->fullscreen_height - (height + gstXInfo->xwindow->y);
++        }
++        else {
++            width = gstXInfo->xwindow->width;
++            height = gstXInfo->xwindow->height;
++            x = gstXInfo->xwindow->x;
++            y = gstXInfo->xwindow->y;
++        }
++
++        rem = (width % 8)/2;
++        x += rem;
++        width -= rem;
++        rem = (height % 8)/2;
++        y += rem;
++        height -= rem;
++
++        if ((v4l_info->axis_left == x)
++            &&(v4l_info->axis_top == y)
++            && (v4l_info->disp_width == width)
++            && (v4l_info->disp_height == height))
+             break;
+-        v4l_info->axis_left = gstXInfo->xwindow->x;
+-        v4l_info->axis_top = gstXInfo->xwindow->y;
+-        v4l_info->disp_width = gstXInfo->xwindow->width;
+-        v4l_info->disp_height = gstXInfo->xwindow->height;
++        v4l_info->axis_left = x;
++        v4l_info->axis_top = y;
++        v4l_info->disp_width = width;
++        v4l_info->disp_height = height;
+         /* 
+          * FixME:The video window need some tiem to be stale in this case,
+-         * Wait for 10 milliseconds can make it work 
++         * Wait for 20 milliseconds can make it work 
+          * Still need a way to confirm the window is complete 
+          */
+-        usleep(10000);
++        usleep(20000);
+     }
+     GST_INFO("%s:called(x,y,width,height): (%d,%d,%d,%d)",__FUNCTION__, v4l_info->axis_left
+         ,v4l_info->axis_top ,v4l_info->disp_width,v4l_info->disp_height);
+@@ -203,7 +236,7 @@
+     GstXInfo *gstXInfo = v4l_info->gstXInfo;
+     struct v4l2_crop * crop = &v4l_info->crop;
+ 
+-    gint width,height;
++    gint width,height, disp_width, disp_height;
+     gint lw, lh, rw, rh;
+ 
+     if ((!gstXInfo) || (!gstXInfo->xwindow))
+@@ -228,17 +261,32 @@
+     lh = (lh < 0) ? 0: lh;
+     rh = (rh < 0) ? 0: rh;
+ 
+-
+-
+-    width = crop->c.width;
+-    height = crop->c.height;
++    if (fbdev_rotation == 90 || fbdev_rotation == 270) {
++        gint tmp;
++        width = crop->c.height;
++        height = crop->c.width;
++        disp_width = v4l_info->disp_height;
++        disp_height = v4l_info->disp_width;
++        tmp = lw;
++        lw = lh;
++        lh = tmp;
++        tmp = rw;
++        rw = rh;
++        rh = tmp;
++    }
++    else {
++        width = crop->c.width;
++        height = crop->c.height;
++        disp_width = v4l_info->disp_width;
++        disp_height = v4l_info->disp_height;
++    }
+ 
+     GST_INFO("Set color and borders: (lw,lh,rw,rh,width,height,disp_width,"
+         "disp_height) :(%d,%d,%d,%d,%d,%d,%d,%d\n",lw, lh, rw, rh,
+-        width, height, v4l_info->disp_width, v4l_info->disp_height);
+-    
++        width, height, disp_width, disp_height);
++
+     mfw_gst_x11_set_color_borders(gstXInfo, v4l_info->colorSrc,lw, lh, rw, rh, 
+-        width, height, v4l_info->disp_width, v4l_info->disp_height);
++        width, height, disp_width, disp_height);
+ 
+ 
+ }
+@@ -295,10 +343,22 @@
+     lh = (lh < 0) ? 0: lh;
+     rh = (rh < 0) ? 0: rh;
+ 
++    if (fbdev_rotation == 90 || fbdev_rotation == 270) {
++        gint tmp;
++        width = crop->c.height;
++        height = crop->c.width;
++        tmp = lw;
++        lw = lh;
++        lh = tmp;
++        tmp = rw;
++        rw = rh;
++        rh = tmp;
++    }
++    else {
++        width = crop->c.width;
++        height = crop->c.height;
++    }
+ 
+-    width = crop->c.width;
+-    height = crop->c.height;
+-    
+     mfw_gst_x11_clear_color(gstXInfo, lw, lh, width, height);
+ 
+ }
+diff -uNr gst-fsl-plugins-4.0.3.orig/src/misc/v4l_sink/src/mfw_gst_xlib.c gst-fsl-plugins-4.0.3/src/misc/v4l_sink/src/mfw_gst_xlib.c
+--- gst-fsl-plugins-4.0.3.orig/src/misc/v4l_sink/src/mfw_gst_xlib.c	2018-11-16 09:57:32.300236057 +0100
++++ gst-fsl-plugins-4.0.3/src/misc/v4l_sink/src/mfw_gst_xlib.c	2018-11-16 10:03:13.511232431 +0100
+@@ -57,6 +57,7 @@
+ 
+ 
+ 
++
+ /*=============================================================================
+                              STATIC VARIABLES
+ =============================================================================*/
+@@ -318,7 +319,6 @@
+                        gint lw, gint lh, gint width, gint height)
+ {
+ 
+-
+     GST_INFO ("set xwindow color :0x%08x in (%dx%d)", color, width, height);
+ 
+     GST_INFO ("Borders (lw,lh,width, height) = (%d, %d, %d, %d).", lw, lh,
+@@ -430,8 +430,6 @@
+                                gint disp_width, gint disp_height)
+ {
+ 
+-
+-
+     if ((width == 0) || (height == 0))
+         return FALSE;
+ 
+@@ -442,11 +440,11 @@
+     GST_DEBUG ("Borders (lw,lh,rw,rh) = (%d, %d, %d, %d).", lw, lh, rw, rh);
+ 
+ 
+-
++/*
+     mfw_gst_x11_set_black_borders (gstXInfo,
+                                    lw, lh, rw, rh, width, height, disp_width,
+                                    disp_height);
+-
++*/
+ 
+     mfw_gst_x11_set_color (gstXInfo, color, lw, lh, width, height);
+ 

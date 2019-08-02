@@ -1,0 +1,177 @@
+diff --git a/Makefile.in b/Makefile.in
+index f116863..26d224e 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -1,5 +1,6 @@
+ # Makefile: A standard Makefile for xsplash.c
+ LDLIBS += -lX11
++LDLIBS += -lm
+ 
+ all: xsplash setoverlay
+ 
+diff --git a/xsplash.c b/xsplash.c
+index eeaaeaf..451821a 100644
+--- a/xsplash.c
++++ b/xsplash.c
+@@ -7,9 +7,25 @@
+ #include <X11/Xlib.h>
+ #include <X11/Xutil.h>
+ #include <X11/Xlib.h>
++#include <X11/Xatom.h>
++#include <dirent.h>
++#include <errno.h>
++#include <math.h>
+ #include "common.h"
+ 
+-#define PROGRESS_FILE "/tmp/splash_progress"
++#define PROGRESS_FILE                   "/tmp/splash_progress"
++#define BRIGHTNESSDEVICE                "/sys/class/backlight/"
++#define MAXPATHLENGTH                   200
++#define SEEPROM_I2C_ADDRESS             "0-0054"
++#define SEEPROM_I2C_BUS                 "i2c-0"
++#define I2CSEEPROMDEVICE                "/sys/class/i2c-dev/"SEEPROM_I2C_BUS"/device/"SEEPROM_I2C_ADDRESS"/eeprom"
++#define BLDIMM_POS                      128
++
++#ifdef US03
++#warning "Def Us03"
++#else
++#warning "NOT Def Us03"
++#endif
+ 
+ static struct option long_options[] =
+ {
+@@ -18,6 +34,126 @@ static struct option long_options[] =
+ {0, 0, 0, 0}
+ };
+ 
++//Helper function for reading a parameter from sysfs
++int sysfs_read(char* pathto, char* fname, char* value, int n)
++{
++    char str[MAXPATHLENGTH];
++    FILE* fp;
++
++    strncpy(str,pathto,MAXPATHLENGTH);
++    strncat(str,fname,MAXPATHLENGTH);
++
++    if((fp = fopen(str, "rb"))==NULL)
++    {
++        fprintf(stderr,"Cannot open sysfs file -> %s \n",str);
++        return -1;
++    }
++
++    rewind(fp);
++    fread (value, 1, n, fp);
++    fclose(fp);
++    return 0;
++}
++//Helper function for writing a parameter to sysfs
++int sysfs_write(char* pathto, char* fname, char* value)
++{
++    char str[MAXPATHLENGTH];
++    FILE* fp;
++
++    strncpy(str,pathto,MAXPATHLENGTH);
++    strncat(str,fname,MAXPATHLENGTH);
++
++    if((fp = fopen(str, "ab"))==NULL)
++    {
++        fprintf(stderr,"Cannot open sysfs file -> %s \n",str);
++        return -1;
++    }
++
++    rewind(fp);
++    fwrite(value,1,strlen(value),fp);
++    fclose(fp);
++    return 0;
++}
++// Helper function to read the brightness value from SEEPROM.
++// A value in the range 0-255 is returned
++// NOTE: 0 means min. brightness, not backlight off.
++// In case of error, 255 is returned, to be on the safe side.
++static int get_brightness_from_seeprom()
++{
++    //1: Here we open the SEEPROM, which is supposed to be connected on the i2c-0 bus.
++    FILE* fp;
++    if((fp = fopen(I2CSEEPROMDEVICE, "rb"))==NULL)
++    {
++        fprintf(stderr, "psplash: Error eeprom_open: dev= %s err=%s\n", I2CSEEPROMDEVICE, strerror(errno));
++        return 255;
++    }
++
++    //2: Now read the brightness value from the corresponding offset
++    char buf = 255;
++
++    fseek (fp, BLDIMM_POS, SEEK_SET);
++    if(1 !=fread(&buf, 1, 1, fp))
++        fprintf(stderr, "psplash: Error reading the eeprom: err=%s\n", strerror(errno));
++
++    //3: Close and return value
++    fclose(fp);
++    return (((int)buf) & 0xff) ;
++}
++
++
++//Sets the brightness value as desired (without saving to i2c SEEPROM)
++static int SetBrightness(char* brightnessdevice, int* pval)
++{
++    char strval[50];
++
++    sprintf (strval,"%d", *pval);
++    sysfs_write(brightnessdevice,"brightness",strval);
++    return 0;
++}
++
++void UpdateBrightness()
++{
++    char brightnessdevice[MAXPATHLENGTH] = BRIGHTNESSDEVICE;
++    DIR           *d;
++    struct dirent *dir;
++    int max_brightness;
++    int target_brightness;
++    char strval[5]={0,0,0,0,0};
++
++    d = opendir(BRIGHTNESSDEVICE);
++    d = opendir(BRIGHTNESSDEVICE);
++    if (d)
++    {
++        while ((dir = readdir(d)) != NULL)
++        {
++            if(dir->d_name[0] != '.')
++            {
++                strcat(brightnessdevice, dir->d_name);
++                strcat(brightnessdevice,"/");
++                break;
++            }
++        }
++        closedir(d);
++    }
++    // Read the max_brightness value for the backlight driver and perform sanity check
++    sysfs_read( brightnessdevice, "max_brightness", strval, 3 );
++    max_brightness=atoi(strval);
++
++    if((max_brightness < 1) || (max_brightness > 255))
++        max_brightness = 100;
++
++    // Read the target brightness from SEEPROM and perform scaling to suit the dynamic range of the backlight driver
++    target_brightness = get_brightness_from_seeprom();
++    target_brightness = ceil((target_brightness * max_brightness)/(255.0));
++
++    if(target_brightness > max_brightness)
++        target_brightness = max_brightness;
++    else if(target_brightness < 1)
++        target_brightness = 1;
++
++    SetBrightness(brightnessdevice, &target_brightness);
++}
++
+ static void convert_pixel24(char *rgb32_out, int rgb16_in, int x, int y, int width)
+ {
+     uint8_t red;
+@@ -389,6 +525,7 @@ int main(int argc, char* argv[])
+     draw_image(filename, display, window, gc, visual, display_width, display_height, display_depth);
+ #endif
+ 
++    UpdateBrightness();
+ #ifndef US03
+     while (1) 
+     {

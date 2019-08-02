@@ -6,13 +6,11 @@ SECTION = "base"
 LICENSE = "GPLv2+"
 LIC_FILES_CHKSUM = "file://psplash.h;beginline=1;endline=16;md5=840fb2356b10a85bed78dd09dc7745c6"
 
-PR = "r28"
+PR = "r35"
 SRCNAME = "ltools-${BPN}"
-SRCREV = "d845818a281bed5fcfa9de95d64fda2c3606f8f3"
-SRC_URI = "git://github.com/ExorEmbedded/psplash.git;branch=exorint-1.x.x"
-
-SRCBRANCH_ca16 = "pgd_ca"
-SRCREV_ca16 = "736e9a64604f1bfc56e1cd3015390105491b6da2"
+SRCBRANCH = "exorint-1.x.x"
+SRCREV = "61aba02650c82af9262fa21f52a6b2de3ee26051"
+SRC_URI = "git://github.com/ExorEmbedded/psplash.git;branch=${SRCBRANCH}"
 
 inherit exorint-src
 

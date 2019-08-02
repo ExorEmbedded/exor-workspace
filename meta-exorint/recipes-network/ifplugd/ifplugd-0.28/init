@@ -63,7 +63,8 @@ case "$VERB" in
         for IF in $INTERFACES ; do
             A="`eval echo \$\{ARGS_${IF}\}`"
             [ -z "$A" ] && A="$ARGS"
-            $IFPLUGD -i $IF $A
+            $IFPLUGD -c -i $IF &>/dev/null
+            [ $? -ne 0 ] && $IFPLUGD -i $IF $A
             echo -n " $IF"
         done
         echo "."

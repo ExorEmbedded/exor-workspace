@@ -1,0 +1,119 @@
+#! /bin/sh
+#
+# DHCP Server init script (currently based on Busybox implementation)
+#
+# Optional environment for manual execution:
+#   IFACE       The interface to be controlled
+#
+set -e
+
+DAEMON="/usr/sbin/udhcpd"
+CONFDIR="/etc/udhcpd"
+PIDDIR="/var/run/udhcpd"
+PPCMD="`cat /proc/$PPID/comm`"
+
+# logging to syslog and run in foreground so start-stop-daemon
+# can grab control of pid(s)
+UDHCPD_OPTS="-Sf"
+
+mkdir -p "${PIDDIR}"
+
+if [ -z "${IFACE}" ]; then
+    CONFFILES="`ls ${CONFDIR}`"
+    PIDFILES="`ls ${PIDDIR}`"
+else
+    CONFFILES="${IFACE}.conf"
+    PIDFILES="${IFACE}.pid"
+fi
+
+log()
+{
+    echo "$@"
+    echo "$@" | logger -t "DHCP Server"
+}
+
+do_start()
+{
+    for conffile in ${CONFFILES}
+    do
+        if [ ! -e "${CONFDIR}/${conffile}" ]; then
+            log -e "no such config: ${CONFDIR}/${conffile}!"
+            exit 1
+        fi
+        iface="`basename ${conffile} .conf`"
+        if [ "`cat /sys/class/net/$iface/operstate`" != "up" ]; then
+            log -e "interface $iface is not operational!"
+            exit 2
+        fi
+        if [ "${PPCMD}" = "rc" ]; then
+            if [ "`sys_params services/dhcp_server/interfaces/${iface}/autostart`" != "true" ]; then
+                log "No autostart on ${iface} "
+                continue
+            fi
+        fi
+        log "Launching server on ${iface}"
+        start-stop-daemon -S --background --pidfile "${PIDDIR}/${iface}.pid" --make-pidfile \
+            -x "${DAEMON}" --oknodo -- "${UDHCPD_OPTS}" "${CONFDIR}/${conffile}"
+    done
+}
+
+do_stop()
+{
+    for pidfile in ${PIDFILES}
+    do
+        if [ ! -e "${PIDDIR}/${pidfile}" ]; then
+            log -e "no such pid: ${PIDDIR}/${pidfile}!"
+            exit 0
+        fi
+        start-stop-daemon -K -x "${DAEMON}" --pidfile "${PIDDIR}/${pidfile}" --oknodo
+        rm -f "${PIDDIR}/${pidfile}"
+    done
+}
+
+do_restart()
+{
+    do_stop
+    sleep 2
+    do_start
+}
+
+do_status()
+{
+    for pidfile in ${PIDFILES}
+    do
+        if [ -e ${PIDDIR}/$pidfile ] && [ -e "/proc/`cat ${PIDDIR}/$pidfile`" ]; then
+            echo "Running"
+            exit 0
+        fi
+    done
+
+    echo "NOT Running"
+    exit 1
+}
+
+case "$1" in
+  start)
+    log "Starting"
+    do_start
+  ;;
+
+  stop)
+    log "Stopping"
+    do_stop
+  ;;
+
+  restart)
+    log "Restarting"
+    do_restart
+  ;;
+
+  status)
+    do_status
+  ;;
+
+  *)
+    echo "Usage: /etc/init.d/dhcp-server {start|stop|status|restart}"
+    exit 1
+esac
+
+exit 0

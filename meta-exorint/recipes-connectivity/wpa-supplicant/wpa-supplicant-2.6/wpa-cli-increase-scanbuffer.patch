@@ -1,0 +1,112 @@
+Index: wpa_supplicant-2.6/wpa_supplicant/wpa_cli.c
+===================================================================
+--- wpa_supplicant-2.6.orig/wpa_supplicant/wpa_cli.c
++++ wpa_supplicant-2.6/wpa_supplicant/wpa_cli.c
+@@ -216,7 +216,7 @@ static void wpa_cli_msg_cb(char *msg, si
+ 
+ static int _wpa_ctrl_command(struct wpa_ctrl *ctrl, char *cmd, int print)
+ {
+-	char buf[4096];
++	char buf[8192];
+ 	size_t len;
+ 	int ret;
+ 
+@@ -259,7 +259,7 @@ static int wpa_ctrl_command(struct wpa_c
+ static int wpa_cli_cmd(struct wpa_ctrl *ctrl, const char *cmd, int min_args,
+ 		       int argc, char *argv[])
+ {
+-	char buf[4096];
++	char buf[8192];
+ 	if (argc < min_args) {
+ 		printf("Invalid %s command - at least %d argument%s "
+ 		       "required.\n", cmd, min_args,
+@@ -1739,7 +1739,7 @@ static int wpa_cli_cmd_sta(struct wpa_ct
+ static int wpa_ctrl_command_sta(struct wpa_ctrl *ctrl, char *cmd,
+ 				char *addr, size_t addr_len)
+ {
+-	char buf[4096], *pos;
++	char buf[8192], *pos;
+ 	size_t len;
+ 	int ret;
+ 
+@@ -2026,7 +2026,7 @@ static int wpa_cli_cmd_p2p_get_passphras
+ static int wpa_cli_cmd_p2p_serv_disc_req(struct wpa_ctrl *ctrl, int argc,
+ 					 char *argv[])
+ {
+-	char cmd[4096];
++	char cmd[8192];
+ 
+ 	if (argc < 2) {
+ 		printf("Invalid P2P_SERV_DISC_REQ command: needs two "
+@@ -2050,7 +2050,7 @@ static int wpa_cli_cmd_p2p_serv_disc_can
+ static int wpa_cli_cmd_p2p_serv_disc_resp(struct wpa_ctrl *ctrl, int argc,
+ 					  char *argv[])
+ {
+-	char cmd[4096];
++	char cmd[8192];
+ 	int res;
+ 
+ 	if (argc != 4) {
+@@ -2117,7 +2117,7 @@ static int wpa_cli_cmd_p2p_service_rep(s
+ static int wpa_cli_cmd_p2p_service_del(struct wpa_ctrl *ctrl, int argc,
+ 				       char *argv[])
+ {
+-	char cmd[4096];
++	char cmd[8192];
+ 	int res;
+ 
+ 	if (argc != 2 && argc != 3) {
+@@ -2180,7 +2180,7 @@ static int wpa_ctrl_command_p2p_peer(str
+ 				     char *addr, size_t addr_len,
+ 				     int discovered)
+ {
+-	char buf[4096], *pos;
++	char buf[8192], *pos;
+ 	size_t len;
+ 	int ret;
+ 
+@@ -3781,7 +3781,7 @@ static void wpa_cli_recv_pending(struct
+ 		return;
+ 	}
+ 	while (wpa_ctrl_pending(ctrl) > 0) {
+-		char buf[4096];
++		char buf[8192];
+ 		size_t len = sizeof(buf) - 1;
+ 		if (wpa_ctrl_recv(ctrl, buf, &len) == 0) {
+ 			buf[len] = '\0';
+@@ -3894,7 +3894,7 @@ static void start_edit(void)
+ 
+ static void update_bssid_list(struct wpa_ctrl *ctrl)
+ {
+-	char buf[4096];
++	char buf[8192];
+ 	size_t len = sizeof(buf);
+ 	int ret;
+ 	char *cmd = "BSS RANGE=ALL MASK=0x2";
+@@ -3925,7 +3925,7 @@ static void update_bssid_list(struct wpa
+ 
+ static void update_ifnames(struct wpa_ctrl *ctrl)
+ {
+-	char buf[4096];
++	char buf[8192];
+ 	size_t len = sizeof(buf);
+ 	int ret;
+ 	char *cmd = "INTERFACES";
+@@ -3957,7 +3957,7 @@ static void update_ifnames(struct wpa_ct
+ 
+ static void update_networks(struct wpa_ctrl *ctrl)
+ {
+-	char buf[4096];
++	char buf[8192];
+ 	size_t len = sizeof(buf);
+ 	int ret;
+ 	char *cmd = "LIST_NETWORKS";
+@@ -4139,7 +4139,7 @@ static char * wpa_cli_get_default_ifname
+ #endif /* CONFIG_CTRL_IFACE_UNIX */
+ 
+ #ifdef CONFIG_CTRL_IFACE_NAMED_PIPE
+-	char buf[4096], *pos;
++	char buf[8192], *pos;
+ 	size_t len;
+ 	struct wpa_ctrl *ctrl;
+ 	int ret;

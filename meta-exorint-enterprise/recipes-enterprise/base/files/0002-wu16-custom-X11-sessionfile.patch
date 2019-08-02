@@ -1,0 +1,49 @@
+diff --git a/files/mainos/etc/X11/Xsession_post b/files/mainos/etc/X11/Xsession_post
+new file mode 100755
+index 0000000..84087e9
+--- /dev/null
++++ b/files/mainos/etc/X11/Xsession_post
+@@ -0,0 +1,43 @@
++#!/bin/sh
++
++# this location MUST be consistent with /etc/X11/gpe-login.pre-session
++HOME_VOLATILE=/home/$USER/ramdisk
++export HOME_VOLATILE
++
++. /etc/profile
++. /etc/default/rcS
++
++
++if [ -f $HOME/.profile ]; then
++ . $HOME/.profile
++fi
++
++if [ -f /usr/bin/dbus-launch ]; then
++  ## test for an existing bus daemon, just to be safe
++  if test -z "$DBUS_SESSION_BUS_ADDRESS" ; then
++     # cleanup existing persistent sessions
++     rm -rf $HOME/.dbus
++     ## if not found, launch a new one
++     eval `/usr/bin/dbus-launch --auto-syntax --exit-with-session`
++     echo "D-BUS per-session daemon address is: $DBUS_SESSION_BUS_ADDRESS"
++  fi
++fi
++
++SYSSESSIONDIR=/etc/X11/Xsession.d
++
++SESSIONFILES=`ls -X $SYSSESSIONDIR`
++if [ -n "$SESSIONFILES" ]; then
++    for SESSIONFILE in $SESSIONFILES; do
++    # Test if script is executable first before sourcing it
++        if [ -x "$SYSSESSIONDIR/$SESSIONFILE" ]; then
++            if [ "$SESSIONFILE" != "40hmi.sh" ]
++            then
++                . $SYSSESSIONDIR/$SESSIONFILE
++            else
++                [ $(pidof HMI) ] || . $SYSSESSIONDIR/$SESSIONFILE
++            fi
++        fi
++    done
++fi
++
++exit 0

@@ -1,0 +1,254 @@
+From adf3cf2a7f2bad551da63b8855deb307b68bcb47 Mon Sep 17 00:00:00 2001
+From: Luigi Scagnet Exor Int <luigi.scagnet@exorint.com>
+Date: Wed, 13 Dec 2017 18:27:18 +0100
+Subject: [PATCH] #947 calibration improvement, with average of 10 coordinates.
+
+---
+ src/calibrator.cpp | 53 +++++++++++++++++++++++++++++++++++
+ src/calibrator.hh  |  9 ++++++
+ src/gui/x11.cpp    | 82 +++++++++++++++++++++++++++++++++++++++++++++++++++---
+ src/gui/x11.hpp    |  3 +-
+ 4 files changed, 142 insertions(+), 5 deletions(-)
+
+diff --git a/src/calibrator.cpp b/src/calibrator.cpp
+index bb8656d..ecbdb80 100644
+--- a/src/calibrator.cpp
++++ b/src/calibrator.cpp
+@@ -47,6 +47,59 @@ Calibrator::Calibrator(const char* const device_name0, const XYinfo& axys0,
+     clicked.num = 0;
+     //clicked.x(NUM_POINTS);
+     //clicked.y(NUM_POINTS);
++    calib_filter_pivot = 0;
++}
++/*********************************************************/
++static int avg_x;
++static int avg_y;
++
++void Calibrator::new_click_ready()
++{
++    calib_filter_pivot = 0;
++}
++
++unsigned char Calibrator::get_calib_filter_pivot()
++{
++    return calib_filter_pivot;
++}
++
++bool Calibrator::filter_add_click(int x, int y )
++{
++    if (verbose)
++        printf("DEBUG: %s; step: %d x: %d y: %d\n", __func__, calib_filter_pivot, x, y );
++
++    if( 0 == calib_filter_pivot)
++    {
++        avg_x = x;
++        avg_y = y;
++    }
++
++    if( (x > (avg_x + threshold_misclick/2)) ||
++        (x < (avg_x - threshold_misclick/2)) ||
++        (y > (avg_y + threshold_misclick/2)) ||
++        (y < (avg_y - threshold_misclick/2))
++      )
++    {
++        // X or Y value not valid
++        if( calib_filter_pivot < CALIBRATION_FILTER_SIZE -2 ) // Probabile rimbalzo, butto via
++        {
++            calib_filter_pivot = 0;
++        } else {
++            //Nothing to do
++        }
++    } else {
++        //Valore Buono
++        calib_filter_pivot++;
++        avg_x = (((3*avg_x) + x) / 4);
++        avg_y = (((3*avg_y) + y) / 4);
++    }
++
++    if(calib_filter_pivot >= CALIBRATION_FILTER_SIZE)
++    {
++        return add_click(avg_x, avg_y);
++    }
++
++    return true;
+ }
+
+ bool Calibrator::add_click(int x, int y)
+diff --git a/src/calibrator.hh b/src/calibrator.hh
+index 64f35e4..6ee498b 100644
+--- a/src/calibrator.hh
++++ b/src/calibrator.hh
+@@ -30,6 +30,8 @@
+ #include <stdio.h>
+ #include <vector>
+
++#define CALIBRATION_FILTER_SIZE     10
++
+ int xf86ScaleAxis(int Cx, int to_max, int to_min, int from_max, int from_min);
+ double scaleAxis(double Cx, int to_max, int to_min, int from_max, int from_min);
+
+@@ -169,6 +171,13 @@ public:
+     void reset()
+     {  clicked.num = 0; clicked.x.clear(); clicked.y.clear();}
+
++
++    /// New calibration mode
++    void new_click_ready();
++    unsigned char get_calib_filter_pivot();
++    bool filter_add_click(int x, int y );
++    unsigned char calib_filter_pivot;
++
+     /// add a click with the given coordinates
+     bool add_click(int x, int y);
+
+diff --git a/src/gui/x11.cpp b/src/gui/x11.cpp
+index dfcd9fd..a8a31a6 100644
+--- a/src/gui/x11.cpp
++++ b/src/gui/x11.cpp
+@@ -58,13 +58,15 @@ const int font_size = 16;
+ const int help_lines = 4;
+ const std::string help_text[help_lines] = {
+     "Touchscreen Calibration",
+-    "Press the point, use a stylus to increase precision.",
++    "Press and hold the point, use a stylus to increase precision.",
+     "",
+     "(To abort, press any key or wait)"
+ };
+
+ const char* GuiCalibratorX11::colors[GuiCalibratorX11::NUM_COLORS] = {"BLACK", "WHITE", "GRAY", "DIMGRAY", "RED"};
+
++static bool press_calib_status = false;
++
+ #ifndef HAVE_TIMERFD
+ void sigalarm_handler(int num);
+ #endif
+@@ -132,7 +134,7 @@ GuiCalibratorX11::GuiCalibratorX11(Calibrator* calibrator0)
+     // Register events on the window
+     XSetWindowAttributes attributes;
+     attributes.override_redirect = True;
+-    attributes.event_mask = ExposureMask | KeyPressMask | ButtonPressMask;
++    attributes.event_mask = ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask;
+
+     win = XCreateWindow(display, RootWindow(display, screen_num),
+                 0, 0, display_width, display_height, 0,
+@@ -144,7 +146,7 @@ GuiCalibratorX11::GuiCalibratorX11(Calibrator* calibrator0)
+     // Listen to events
+     XGrabKeyboard(display, win, False, GrabModeAsync, GrabModeAsync,
+                 CurrentTime);
+-    XGrabPointer(display, win, False, ButtonPressMask, GrabModeAsync,
++    XGrabPointer(display, win, False, ButtonPressMask | ButtonReleaseMask, GrabModeAsync,
+                 GrabModeAsync, None, None, CurrentTime);
+
+     Colormap colormap = DefaultColormap(display, screen_num);
+@@ -313,6 +315,62 @@ bool GuiCalibratorX11::on_timer_signal()
+     return true;
+ }
+
++bool GuiCalibratorX11::on_button_press(int x, int y)
++{
++    // Clear window, maybe a bit overdone, but easiest for me atm.
++    // (goal is to clear possible message and other clicks)
++    XClearWindow(display, win);
++
++    // Handle click
++    bool success = calibrator->filter_add_click( x, y );
++
++    // Force a redraw
++    redraw();
++    draw_message("Hold... ");
++
++    return true;
++}
++
++bool GuiCalibratorX11::on_button_hold(int x, int y)
++{
++    // Clear window, maybe a bit overdone, but easiest for me atm.
++    // (goal is to clear possible message and other clicks)
++    //XClearWindow(display, win);
++
++    // Handle click
++    time_elapsed = 0;
++    bool success = calibrator->filter_add_click( x, y );
++    if (!success) {
++        XClearWindow(display, win);
++        time_elapsed = 0;
++        draw_message("Mis-click detected. Restart...");
++    }
++
++    if( calibrator->get_calib_filter_pivot() >= CALIBRATION_FILTER_SIZE)
++    {
++        // Are we done yet?
++        if (calibrator->get_numclicks() >= 4) {
++            // Recalibrate
++            success = calibrator->finish(display_width, display_height);
++
++            if (success) {
++                exit(0);
++            } else {
++                // TODO, in GUI ?
++                fprintf(stderr, "Error: unable to apply or save configuration values");
++                exit(1);
++            }
++        }
++        // Force a redraw
++        XClearWindow(display, win);
++        redraw();
++        draw_message("Ok. Next point. ");
++        calibrator->new_click_ready();
++        press_calib_status = false;
++    }
++    return true;
++}
++
+ bool GuiCalibratorX11::on_button_press_event(XEvent event)
+ {
+     // Clear window, maybe a bit overdone, but easiest for me atm.
+@@ -379,6 +437,16 @@ void GuiCalibratorX11::give_timer_signal()
+         }
+ #endif
+
++        if( true == press_calib_status )
++        {
++            // Get the mouse cursor position
++            int win_x, win_y, root_x, root_y = 0;
++            unsigned int mask = 0;
++            Window child_win, root_win;
++            XQueryPointer(instance->display, instance->win, &child_win, &root_win, &root_x, &root_y, &win_x, &win_y, &mask);
++            bool success = instance->on_button_hold(root_x, root_y);
++        }
++
+         //check timeout
+         instance->on_timer_signal();
+
+@@ -394,7 +462,13 @@ void GuiCalibratorX11::give_timer_signal()
+                     break;
+
+                 case ButtonPress:
+-                    instance->on_button_press_event(event);
++                    //instance->on_button_press_event(event);
++		    press_calib_status = true;
++		    instance->on_button_press(event.xbutton.x, event.xbutton.y);
++		    break;
++
++                case ButtonRelease:
++                    press_calib_status = false;
+                     break;
+
+                 case KeyPress:
+diff --git a/src/gui/x11.hpp b/src/gui/x11.hpp
+index d9ee2fb..5ddb320 100644
+--- a/src/gui/x11.hpp
++++ b/src/gui/x11.hpp
+@@ -64,7 +64,8 @@ protected:
+     bool on_timer_signal();
+     bool on_expose_event();
+     bool on_button_press_event(XEvent event);
+-
++    bool on_button_press(int x, int y);
++    bool on_button_hold(int x, int y);
+     // Helper functions
+     void set_display_size(int width, int height);
+     void redraw();
+--
+2.1.4
+

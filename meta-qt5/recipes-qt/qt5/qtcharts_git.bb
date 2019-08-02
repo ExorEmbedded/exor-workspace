@@ -8,8 +8,10 @@ LIC_FILES_CHKSUM = " \
 
 DEPENDS += "qtbase qtdeclarative qtmultimedia"
 
-SRCREV = "0bc38b76e2aca205a0a96cc637395652d31684ba"
+SRCREV = "dcc4fd4fe0aff770204272d04749184df133bbb2"
 
 # The same issue as in qtbase:
 # http://errors.yoctoproject.org/Errors/Details/152641/
 LDFLAGS_append_x86 = "${@bb.utils.contains('DISTRO_FEATURES', 'ld-is-gold', ' -fuse-ld=bfd ', '', d)}"
+
+PACKAGECONFIG ?= "qtquickcompiler"

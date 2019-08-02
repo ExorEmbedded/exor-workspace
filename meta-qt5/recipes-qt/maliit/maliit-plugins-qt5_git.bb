@@ -10,7 +10,9 @@ DEPENDS = "maliit-framework-qt5"
 
 RDEPENDS_${PN} += "qtsvg-plugins"
 
-SRC_URI = "git://github.com/maliit/plugins.git;branch=master"
+SRC_URI = "git://github.com/maliit/plugins.git;branch=master \
+           file://0001-Do-not-use-tr1-namespace.patch \
+          "
 
 SRCREV = "c6a348592607248a771a3dde5a0e33dc3c433a2a"
 PV = "0.99.0+git${SRCPV}"
@@ -23,12 +25,13 @@ EXTRA_QMAKEVARS_PRE = "\
     CONFIG+=nodoc \
 "
 
+# tests fail to build with clang
+EXTRA_QMAKEVARS_PRE_append_toolchain-clang = " CONFIG+=notests"
+
 FILES_${PN} += "\
     ${libdir}/maliit \
     ${datadir} \
 "
-
-FILES_${PN}-dbg += "${libdir}/maliit/plugins/.debug"
 
 S= "${WORKDIR}/git"
 

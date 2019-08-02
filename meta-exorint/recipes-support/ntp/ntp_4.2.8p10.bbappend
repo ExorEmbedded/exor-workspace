@@ -1,8 +1,10 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 FILESEXTRAPATHS_prepend_carel := "${THISDIR}/files/carel:${THISDIR}/files:"
 
-PR := "${PR}.x2"
-SRC_URI_append = "file://0001-Start-ntpd-daemon-with-unsync-status.patch "
+PR := "${PR}.x5"
+SRC_URI_append = "file://0001-Start-ntpd-daemon-with-unsync-status.patch \
+	file://0002-disable-peer-distance-check.patch \
+"
 
 FILES_${PN} += "${sbindir}/ntpdate"
 

@@ -1,7 +1,7 @@
 Index: metacity-2.34.13/src/core/display-private.h
 ===================================================================
---- metacity-2.34.13.orig/src/core/display-private.h	2012-02-15 18:31:44.000000000 +0100
-+++ metacity-2.34.13/src/core/display-private.h	2016-11-07 15:53:27.521611704 +0100
+--- metacity-2.34.13.orig/src/core/display-private.h
++++ metacity-2.34.13/src/core/display-private.h
 @@ -362,6 +362,7 @@ MetaDisplay* meta_display_for_x_display
  MetaDisplay* meta_get_display            (void);
  
@@ -12,32 +12,74 @@ Index: metacity-2.34.13/src/core/display-private.h
  void     meta_display_set_grab_op_cursor (MetaDisplay *display,
 Index: metacity-2.34.13/src/core/display.c
 ===================================================================
---- metacity-2.34.13.orig/src/core/display.c	2016-11-04 12:25:04.612042580 +0100
-+++ metacity-2.34.13/src/core/display.c	2016-11-07 15:53:29.969611601 +0100
-@@ -3031,6 +3031,7 @@ meta_display_xwindow_is_a_no_focus_windo
+--- metacity-2.34.13.orig/src/core/display.c
++++ metacity-2.34.13/src/core/display.c
+@@ -3029,8 +3029,20 @@ meta_display_xwindow_is_a_no_focus_windo
+   return is_a_no_focus_window;
+ }
  
++static Cursor
++create_blank_cursor (MetaDisplay *display, Window window)
++{
++  Cursor xcursor;
++  XColor dummy;
++  static char data[1] = {0};
++  Pixmap blank = XCreateBitmapFromData(display->xdisplay, window, data, 1, 1);
++  xcursor = XCreatePixmapCursor(display->xdisplay, blank, blank, &dummy, &dummy, 0, 0);
++  return xcursor;
++}
++
  Cursor
  meta_display_create_x_cursor (MetaDisplay *display,
 +                              Window window,
                                MetaCursor cursor)
  {
    Cursor xcursor;
-@@ -3038,6 +3039,14 @@ meta_display_create_x_cursor (MetaDispla
- 
-   switch (cursor)
-     {
-+    case META_CURSOR_BLANK:
-+    {
-+      static char data[1] = {0};
-+      XColor dummy;
-+      Pixmap blank = XCreateBitmapFromData(display->xdisplay, window, data, 1, 1);
-+      xcursor = XCreatePixmapCursor(display->xdisplay, blank, blank, &dummy, &dummy, 0, 0);
-+      return xcursor;
-+    }
+@@ -3041,41 +3053,19 @@ meta_display_create_x_cursor (MetaDispla
      case META_CURSOR_DEFAULT:
        glyph = XC_left_ptr;
        break;
-@@ -3085,6 +3094,7 @@ meta_display_create_x_cursor (MetaDispla
++    case META_CURSOR_BLANK:
+     case META_CURSOR_NORTH_RESIZE:
+-      glyph = XC_top_side;
+-      break;
+     case META_CURSOR_SOUTH_RESIZE:
+-      glyph = XC_bottom_side;
+-      break;
+     case META_CURSOR_WEST_RESIZE:
+-      glyph = XC_left_side;
+-      break;
+     case META_CURSOR_EAST_RESIZE:
+-      glyph = XC_right_side;
+-      break;
+     case META_CURSOR_SE_RESIZE:
+-      glyph = XC_bottom_right_corner;
+-      break;
+     case META_CURSOR_SW_RESIZE:
+-      glyph = XC_bottom_left_corner;
+-      break;
+     case META_CURSOR_NE_RESIZE:
+-      glyph = XC_top_right_corner;
+-      break;
+     case META_CURSOR_NW_RESIZE:
+-      glyph = XC_top_left_corner;
+-      break;
+     case META_CURSOR_MOVE_OR_RESIZE_WINDOW:
+-      glyph = XC_fleur;
+-      break;
+     case META_CURSOR_BUSY:
+-      glyph = XC_watch;
+-      break;
+-      
+     default:
+-      g_assert_not_reached ();
+-      glyph = 0; /* silence compiler */
+-      break;
++      return create_blank_cursor(display, window);
+     }
+   
+   xcursor = XCreateFontCursor (display->xdisplay, glyph);
+@@ -3085,6 +3075,7 @@ meta_display_create_x_cursor (MetaDispla
  
  static Cursor
  xcursor_for_op (MetaDisplay *display,
@@ -45,7 +87,7 @@ Index: metacity-2.34.13/src/core/display.c
                  MetaGrabOp   op)
  {
    MetaCursor cursor = META_CURSOR_DEFAULT;
-@@ -3135,7 +3145,7 @@ xcursor_for_op (MetaDisplay *display,
+@@ -3135,7 +3126,7 @@ xcursor_for_op (MetaDisplay *display,
  
    if (cursor == META_CURSOR_DEFAULT)
      return None;
@@ -54,7 +96,7 @@ Index: metacity-2.34.13/src/core/display.c
  }
  
  void
-@@ -3148,7 +3158,7 @@ meta_display_set_grab_op_cursor (MetaDis
+@@ -3148,7 +3139,7 @@ meta_display_set_grab_op_cursor (MetaDis
  {
    Cursor cursor;
  
@@ -65,8 +107,8 @@ Index: metacity-2.34.13/src/core/display.c
                     ButtonPressMask | ButtonReleaseMask |        \
 Index: metacity-2.34.13/src/core/frame.c
 ===================================================================
---- metacity-2.34.13.orig/src/core/frame.c	2011-11-10 15:14:34.000000000 +0100
-+++ metacity-2.34.13/src/core/frame.c	2016-11-07 15:53:34.493611411 +0100
+--- metacity-2.34.13.orig/src/core/frame.c
++++ metacity-2.34.13/src/core/frame.c
 @@ -407,7 +407,7 @@ meta_frame_set_screen_cursor (MetaFrame
      XUndefineCursor (frame->window->display->xdisplay, frame->xwindow);
    else
@@ -78,8 +120,8 @@ Index: metacity-2.34.13/src/core/frame.c
        XFreeCursor (frame->window->display->xdisplay, xcursor);
 Index: metacity-2.34.13/src/core/screen.c
 ===================================================================
---- metacity-2.34.13.orig/src/core/screen.c	2012-02-09 19:07:40.000000000 +0100
-+++ metacity-2.34.13/src/core/screen.c	2016-11-07 15:53:37.381611290 +0100
+--- metacity-2.34.13.orig/src/core/screen.c
++++ metacity-2.34.13/src/core/screen.c
 @@ -533,7 +533,7 @@ meta_screen_new (MetaDisplay *display,
    
    reload_xinerama_infos (screen);
@@ -109,8 +151,8 @@ Index: metacity-2.34.13/src/core/screen.c
    XFlush (screen->display->xdisplay);
 Index: metacity-2.34.13/src/include/common.h
 ===================================================================
---- metacity-2.34.13.orig/src/include/common.h	2012-02-09 19:07:40.000000000 +0100
-+++ metacity-2.34.13/src/include/common.h	2016-11-07 15:53:42.001611095 +0100
+--- metacity-2.34.13.orig/src/include/common.h
++++ metacity-2.34.13/src/include/common.h
 @@ -147,6 +147,7 @@ typedef enum
  
  typedef enum

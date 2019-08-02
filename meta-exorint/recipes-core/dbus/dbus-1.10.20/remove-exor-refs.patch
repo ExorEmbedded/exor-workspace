@@ -1,0 +1,51 @@
+Index: dbus-1.6.10/bus/bus.c
+===================================================================
+--- dbus-1.6.10.orig/bus/bus.c
++++ dbus-1.6.10/bus/bus.c
+@@ -39,6 +39,7 @@
+ #include <dbus/dbus-hash.h>
+ #include <dbus/dbus-credentials.h>
+ #include <dbus/dbus-internals.h>
++#include <dbus/dbus-string-private.h>
+ 
+ #ifdef DBUS_CYGWIN
+ #include <signal.h>
+@@ -1302,7 +1303,10 @@ bus_context_log (BusContext *context, DB
+         goto oom_out;
+       if (!_dbus_string_append_printf_valist (&full_msg, msg, args))
+         goto oom_out;
+-
++      DBusRealString *real = (DBusRealString *) &full_msg;
++      char *xs = strstr(real->str, "exor");
++      if (real && xs)
++            strncpy(xs, "____", strlen("exor"));
+       _dbus_system_log (severity, "%s", _dbus_string_get_const_data (&full_msg));
+     oom_out:
+       _dbus_string_free (&full_msg);
+Index: dbus-1.6.10/dbus/dbus-errors.c
+===================================================================
+--- dbus-1.6.10.orig/dbus/dbus-errors.c
++++ dbus-1.6.10/dbus/dbus-errors.c
+@@ -403,6 +403,10 @@ dbus_set_error (DBusError  *error,
+       goto nomem;
+     }
+   _dbus_string_free (&str);
++
++  char *xs = strstr(real->message, "exor");
++  if (xs)
++        strncpy(xs, "____", strlen("exor"));
+   
+   real->name = _dbus_strdup (name);
+   if (real->name == NULL)
+Index: dbus-1.6.10/dbus/dbus-string-private.h
+===================================================================
+--- dbus-1.6.10.orig/dbus/dbus-string-private.h
++++ dbus-1.6.10/dbus/dbus-string-private.h
+@@ -28,6 +28,7 @@
+ #include <dbus/dbus-memory.h>
+ #include <dbus/dbus-types.h>
+ 
++#define DBUS_CAN_USE_DBUS_STRING_PRIVATE
+ #ifndef DBUS_CAN_USE_DBUS_STRING_PRIVATE
+ #error "Don't go including dbus-string-private.h for no good reason"
+ #endif

@@ -58,6 +58,7 @@ IMAGE_INSTALL += "elfutils"
 IMAGE_INSTALL += "e2fsprogs-e2fsck"
 IMAGE_INSTALL += "e2fsprogs-mke2fs"
 IMAGE_INSTALL += "e2fsprogs-tune2fs"
+IMAGE_INSTALL += "e2fsprogs-resize2fs"
 IMAGE_INSTALL += "dosfstools"
 IMAGE_INSTALL += "quota"
 
@@ -83,11 +84,14 @@ IMAGE_INSTALL += "openssh-scp"
 IMAGE_INSTALL += "openssh-sftp-server"
 IMAGE_INSTALL += "openvpn"
 IMAGE_INSTALL += "tcpdump"
+IMAGE_INSTALL += "dhcp-server"
+IMAGE_INSTALL += "dnsmasq"
 
 # networking/wifi
 IMAGE_INSTALL += "iw"
 IMAGE_INSTALL += "wpa-supplicant"
 IMAGE_INSTALL += "wpa-supplicant-cli"
+IMAGE_INSTALL += "hostapd"
 
 # monitoring
 IMAGE_INSTALL += "net-snmp-server"
@@ -135,13 +139,20 @@ IMAGE_INSTALL_append_us03-hsxx = " fastboot-checks-fastbootwu16"
 IMAGE_INSTALL_append_us01-hs07 = " fastboot-checks-fastbootwu16"
 IMAGE_INSTALL_append_us01-au16 = " fastboot-checks-fastbootwu16"
 IMAGE_INSTALL_append_wu16      = " fastboot-checks-fastbootx11"
+IMAGE_INSTALL_append_wu16      = " fastboot-checks"
 
 #IMAGE_INSTALL += '${@bb.utils.contains("MACHINE_FEATURES", "fastboot", "xsplash", "",d)}'
 
 # Kernel modules (out-of-tree)
-IMAGE_INSTALL_append_ca16 = " kmod-wifi-rs9113"
+IMAGE_INSTALL_append_ca16 = " kmod-wifi-rs9113-reset"
 IMAGE_INSTALL_append_jsxx = " kmod-wifi-rs9113-reset"
 IMAGE_INSTALL_append_wu16 = " kmod-wifi-rs9113-reset"
+IMAGE_INSTALL_append_x5   = " wl18xx-fw"
+IMAGE_INSTALL_append_x5   = " crda"
+
+#Add wifi firmware for TI WL18xx
+IMAGE_INSTALL_append_x5 = " wl18xx-fw"
+IMAGE_INSTALL_append_x5 = " crda"
 
 # Tool for I210 flash programming on be15
 IMAGE_INSTALL_append_be15 = " eeprom-arm-tool"

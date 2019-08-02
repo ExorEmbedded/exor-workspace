@@ -12,11 +12,6 @@ VERBOSITY=0
 # run supplicant only on enabled wireless devices
 iw dev | grep -q "Interface $IFACE" || exit 0
 
-# check if interface is enabled only in auto mode (ifupdown)
-if [ "$MANUAL" = "" ]; then
-    jmuconfig-enabled-wifaces.js | grep -q "$IFACE" || exit 0
-fi
-
 if [ -s "$IF_WPA_CONF" ]; then
 	WPA_SUP_CONF="-c $IF_WPA_CONF"
 else
@@ -33,6 +28,21 @@ if [ ! -x "$WPA_SUP_BIN" ]; then
 fi
 
 if [ "$MODE" = "start" ] ; then
+
+	if [ "$MANUAL" = "" ] ; then
+
+		# make sure interface is autostarted
+		sys_params network/wifi/autostartInterfaces 2>/dev/null | grep -q "$IFACE" || exit 0
+
+		# STA: apply volatile mode if defined, otherwise persistent
+		VMODE=$(sys_params -l -V services/wifi/interfaces/$IFACE/mode)
+		if [ -n "$VMODE" ]; then
+			[ "$VMODE" = "STA" ] || exit 0
+		else
+			[ "$(sys_params -l network/wifi/interfaces/[name=$IFACE]/mode)" = "STA" ] || exit 0
+		fi
+	fi
+
 	# driver type of interface, defaults to ${WPA_SUP_DRIVER} when undefined
 	if [ -s "/etc/wpa_supplicant/driver.$IFACE" ]; then
 		IF_WPA_DRIVER=$(cat "/etc/wpa_supplicant/driver.$IFACE")

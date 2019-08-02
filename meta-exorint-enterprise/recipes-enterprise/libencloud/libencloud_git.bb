@@ -3,9 +3,9 @@ DESCRIPTION = "Cloud Enabler library"
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=44919a17bae6ff573e20411bbbc1d778"
 
-PR = "x22"
+PR = "x24"
 SRCBRANCH = "exorint-1.x.x"
-SRCREV = "effdb14a7b2f881813ad5c92f08641dc016e02ed"
+SRCREV = "b5244b33b87af4331779294f53fe66d2f0a1c5e6"
 SRC_URI = "git://github.com/ExorEmbedded/libencloud.git;branch=${SRCBRANCH}"
 
 inherit exorint-src
@@ -28,6 +28,8 @@ EXTRA_QMAKEVARS_PRE += "CONFIG+=splitdeps"
 EXTRA_QMAKEVARS_PRE += "CONFIG+=modeqcc"
 EXTRA_QMAKEVARS_PRE += "CONFIG+=nogui"
 EXTRA_QMAKEVARS_PRE += "CONFIG+=notest"
+
+CXXFLAGS += "-fpermissive"
 
 do_compile() {
 

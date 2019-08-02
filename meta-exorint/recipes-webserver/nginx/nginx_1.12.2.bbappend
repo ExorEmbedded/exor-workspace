@@ -10,7 +10,7 @@ SRC_URI += "file://pam-nginx"
 SRC_URI += "file://nginx.init"
 SRC_URI += "file://security-remove-server-header.patch"
 
-PR := "${PR}.x14"
+PR := "${PR}.x18"
 
 INITSCRIPT_PARAMS = '${@bb.utils.contains("MACHINE_FEATURES", "fastboot", "defaults 70 69", "defaults 31 69",d)}'
 
@@ -57,3 +57,4 @@ do_install_append () {
     install -m 0644 "${WORKDIR}/pam-nginx" "${D}/${sysconfdir}/pam.d/nginx"
 }
 
+RDEPENDS_${PN} += "bash"

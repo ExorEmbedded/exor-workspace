@@ -1,0 +1,241 @@
+Index: xscreensaver-5.07/driver/windows.c
+===================================================================
+--- xscreensaver-5.07.orig/driver/windows.c
++++ xscreensaver-5.07/driver/windows.c
+@@ -58,6 +58,9 @@ typedef long PROP32;
+ # include <X11/extensions/Xinerama.h>
+ #endif /* HAVE_XINERAMA */
+ 
++// xinput2 is a prerequisite to grab touch events
++#include <X11/extensions/XInput2.h>
++
+ /* This file doesn't need the Xt headers, so stub these types out... */
+ #undef XtPointer
+ #define XtAppContext void*
+@@ -301,13 +304,84 @@ grab_keyboard_and_mouse (saver_info *si,
+   if (kstatus != GrabSuccess)	/* Do not blank without a kbd grab.   */
+     {
+       /* If we didn't get both grabs, release the one we did get. */
+-      ungrab_keyboard_and_mouse (si);
++      if (si->using_xi_extension)
++        ungrab_all_devices (si);
++      else
++        ungrab_keyboard_and_mouse (si);
+       return False;
+     }
+ 
+   return True;			/* Grab is good, go ahead and blank.  */
+ }
+ 
++static Bool
++grab_all_devices (saver_info *si, Window window)
++{
++  saver_preferences *p = &si->prefs;
++  int opcode, event, error;
++  XIEventMask mask;
++  XIDeviceInfo *all_slaves, *current_slave;
++  int num_slaves;
++  int rc;
++  int i;
++
++//#define MASK_LEN XIMaskLen(XI_LASTEVENT)  // returns BadValue ??
++#define MASK_LEN 2
++  char mask_bits[MASK_LEN] = { 0 };
++
++  mask.deviceid = XIAllMasterDevices;
++  mask.mask_len = MASK_LEN;
++  mask.mask = mask_bits;
++
++  // mask all events
++  memset(mask.mask, 255, mask.mask_len);
++
++  if ((all_slaves = XIQueryDevice(si->dpy, XIAllDevices, &num_slaves)) == NULL)
++    {
++      fprintf(stderr, "Failed querying devices!\n");
++      return False;
++    }
++
++  for (i = 0; i < num_slaves; i++) 
++    {
++      if (p->verbose_p)
++        fprintf(stderr, "Grabbing device: %d\n", i);
++        
++      current_slave = &all_slaves[i];
++      if((rc = XIGrabDevice(si->dpy, current_slave->deviceid, window, CurrentTime, None, GrabModeAsync,
++                         GrabModeAsync, False, &mask)) != GrabSuccess)
++        {   
++          fprintf(stderr, "Grab failed with %d\n", rc);
++          return False;
++        }
++    }
++
++  return True;
++}
++
++void
++ungrab_all_devices (saver_info *si)
++{
++  saver_preferences *p = &si->prefs;
++  XIDeviceInfo* all_slaves, *current_slave;
++  int num_slaves;
++  int i;
++
++  if ((all_slaves = XIQueryDevice(si->dpy, XIAllDevices, &num_slaves)) == NULL)
++   {
++     fprintf(stderr, "Failed querying devices!\n");
++     return;
++   }
++
++  for (i = 0; i < num_slaves; i++) 
++    {
++      if (p->verbose_p)
++        fprintf(stderr, "Ungrabbing device: %d\n", i);
++        
++      current_slave = &all_slaves[i];
++      XIUngrabDevice(si->dpy, current_slave->deviceid, CurrentTime);
++    }
++}
+ 
+ int
+ move_mouse_grab (saver_info *si, Window to, Cursor cursor, int to_screen_no)
+@@ -1625,10 +1699,13 @@ blank_screen (saver_info *si)
+    */
+   mscreen = mouse_screen (si);
+   w = RootWindowOfScreen(si->screens[mscreen].screen);
+-  ok = grab_keyboard_and_mouse (si, w,
+-                                (si->demoing_p ? 0 : si->screens[0].cursor),
+-                                mscreen);
+ 
++  if (si->using_xi_extension)
++    ok = grab_all_devices (si, w);
++  else
++    ok = grab_keyboard_and_mouse (si, w,
++                                  (si->demoing_p ? 0 : si->screens[0].cursor),
++                                  mscreen);
+ 
+ # if 0
+   if (si->using_mit_saver_extension || si->using_sgi_saver_extension)
+@@ -1780,7 +1857,12 @@ unblank_screen (saver_info *si)
+     }*/
+ 
+   store_saver_status (si);  /* store unblank time */
+-  ungrab_keyboard_and_mouse (si);
++
++  if (si->using_xi_extension)
++    ungrab_all_devices (si);
++  else
++    ungrab_keyboard_and_mouse (si);
++
+   //restore_real_vroot (si);
+ 
+   /* Unmap the windows a second time, dammit -- just to avoid a race
+Index: xscreensaver-5.07/driver/Makefile.in
+===================================================================
+--- xscreensaver-5.07.orig/driver/Makefile.in
++++ xscreensaver-5.07/driver/Makefile.in
+@@ -204,7 +204,7 @@ PDF2JPEG_LIBS	= -framework Cocoa
+ 
+ SAVER_LIBS	= $(LIBS) $(X_LIBS) $(XMU_LIBS) @SAVER_LIBS@ \
+ 		  $(XDPMS_LIBS) $(XINERAMA_LIBS) $(GL_LIBS) $(X_PRE_LIBS) \
+-		  -lXt -lX11 -lXext $(X_EXTRA_LIBS) \
++		  -lXt -lX11 -lXext -lXi $(X_EXTRA_LIBS) \
+ 		  $(PASSWD_LIBS)
+ 
+ CMD_LIBS	= $(LIBS) $(X_LIBS) \
+Index: xscreensaver-5.07/driver/timers.c
+===================================================================
+--- xscreensaver-5.07.orig/driver/timers.c
++++ xscreensaver-5.07/driver/timers.c
+@@ -30,6 +30,8 @@
+ # include "xmu.h"
+ #endif /* !HAVE_XMU */
+ 
++#include <X11/extensions/XInput2.h>
++
+ #ifdef HAVE_XIDLE_EXTENSION
+ #include <X11/extensions/xidle.h>
+ #endif /* HAVE_XIDLE_EXTENSION */
+@@ -714,6 +716,30 @@ sleep_until_idle (saver_info *si, Bool u
+     {
+       XtAppNextEvent (si->app, &event);
+ 
++      XGenericEventCookie *cookie = &event.xcookie;
++      XIDeviceEvent *devev;
++
++      // new xinput-based multitouch handling
++      if (XGetEventData(si->dpy, cookie)) 
++        {
++          XIDeviceEvent *devev = cookie->data;
++          if (cookie->type == GenericEvent && cookie->extension == si->xi_opcode) 
++          {
++            switch(devev->evtype) 
++              {
++                case XI_TouchEnd:
++                case XI_KeyRelease:
++                case XI_ButtonRelease:
++                  if (!until_idle_p && !si->freeze_p)
++                    goto DONE;
++                  break;
++                case XI_Motion:
++                default:
++                  break;
++              }
++          }
++      }
++
+       switch (event.xany.type) {
+       case 0:		/* our synthetic "timeout" event has been signalled */
+         if (!p->timeout)
+@@ -828,13 +854,6 @@ sleep_until_idle (saver_info *si, Bool u
+       case ButtonRelease:
+       case MotionNotify:
+ 
+-        if (si->freeze_p)
+-          {
+-	    if (p->debug_p)
+-              fprintf (stderr,"%s: freeze mode - ignoring user event\n", blurb());
+-            break;
+-          }
+-
+ 	if (p->debug_p)
+ 	  {
+             Window root=0, window=0;
+Index: xscreensaver-5.07/driver/types.h
+===================================================================
+--- xscreensaver-5.07.orig/driver/types.h
++++ xscreensaver-5.07/driver/types.h
+@@ -172,6 +172,9 @@ struct saver_info {
+      server extension info
+      ======================================================================= */
+ 
++  Bool using_xi_extension;         /* xinput */
++  int xi_opcode;
++
+   Bool using_xidle_extension;	   /* which extension is being used.         */
+   Bool using_mit_saver_extension;  /* Note that `p->use_*' is the *request*, */
+   Bool using_sgi_saver_extension;  /* and `si->using_*' is the *reality*.    */
+Index: xscreensaver-5.07/driver/xscreensaver.c
+===================================================================
+--- xscreensaver-5.07.orig/driver/xscreensaver.c
++++ xscreensaver-5.07/driver/xscreensaver.c
+@@ -859,12 +859,20 @@ initialize_server_extensions (saver_info
+   Bool server_has_mit_saver_extension_p = False;
+   Bool system_has_proc_interrupts_p = False;
+   const char *piwhy = 0;
++  int event, error;
+ 
+   si->using_xidle_extension = p->use_xidle_extension;
+   si->using_sgi_saver_extension = p->use_sgi_saver_extension;
+   si->using_mit_saver_extension = p->use_mit_saver_extension;
+   si->using_proc_interrupts = p->use_proc_interrupts;
+ 
++  // xinput extension required for touch handling
++  if (!XQueryExtension(si->dpy, "XInputExtension", &si->xi_opcode, &event, &error)) 
++    {
++      fprintf(stderr, "%s: failed getting required XInputExtension!\n", blurb());
++    }
++  si->using_xi_extension = True;
++
+ #ifdef HAVE_XIDLE_EXTENSION
+   {
+     int ev, er;

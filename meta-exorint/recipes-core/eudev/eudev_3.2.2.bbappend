@@ -1,8 +1,9 @@
-PR := "${PR}.x6"
+PR := "${PR}.x10"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 SRC_URI += " file://exorint.rules file://exorint_sensors.rules"
+SRC_URI_append_pa18 = " file://exorint_pa18.rules"
 
 FB = '${@bb.utils.contains("MACHINE_FEATURES", "fastboot", "1", "0",d)}'
 # As systemd also builds udev, skip this package if we're doing a systemd build.
@@ -71,6 +72,10 @@ do_install_append_us01-wu16 () {
 
 do_install_append_hs07 () {
    printf 'KERNEL=="spidev32766.0", SUBSYSTEM=="spidev", SYMLINK="spidev0.0"\n' >> ${D}${sysconfdir}/udev/rules.d/exorint.rules
+}
+
+do_install_append_pa18 () {
+    install -m 0644 ${WORKDIR}/exorint_pa18.rules ${D}${sysconfdir}/udev/rules.d/exorint_pa18.rules
 }
 
 RRECOMMENDS_${PN}_remove = "eudev-hwdb"

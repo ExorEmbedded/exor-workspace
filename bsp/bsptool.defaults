@@ -16,9 +16,9 @@ YOCTOIMAGESC="${YOCTOIMAGESC} core-image-configos-branding-exorint"
 YOCTOSDK="core-sdk-branding-exorint"
 
 # Build
-REPOBASEURL="git@exorint.unfuddle.com:exorint"
+REPOBASEURL="ssh://git@bitbucket.exorint.cloud/bsp"
 
-BRANCH="exorint-rocko"  # default branch for REPOS if not specified (i.e. '-')
+BRANCH="exorint-1.2.x"  # default branch for REPOS if not specified (i.e. '-')
 # REPOS       | 1) name           | 2) URL                                         | 3) branch
 # Yocto repos                                                          (BRANCH if unspecified)
 REPOS=""

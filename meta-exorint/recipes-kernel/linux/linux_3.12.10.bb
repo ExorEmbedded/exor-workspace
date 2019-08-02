@@ -8,16 +8,16 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/linux-${LINUX_VERSION}:"
 SRCNAME = "lke"
 
 SRCBRANCH = "ti-linux-3.12.y_RT"
-SRCREV = "199299daaf4bc87fbbda207a2d10e20e84848bab"
+SRCREV = "8d37c1ab38d3eec7328be3c72757388b42b7b177"
 
 SRCBRANCH_ca16 = "ti-linux-3.12.y_pgd_ca"
-SRCREV_ca16 = "8864dc0463b9d4dc697e24c1e2f910c9f445655f"
+SRCREV_ca16 = "24128234758bfb5c36551825659318c31e8e2f39"
 
 SRCBRANCH_wu16 = "ti-linux-3.12.y_wu16"
-SRCREV_wu16 = "1593cf325cd0dd98b973277cf608857afce1c236"
+SRCREV_wu16 = "073e26c2ab60fa38e0e7703eba1e56e848180365"
 
 SRCBRANCH_au16 = "ti-linux-3.12.y_au"
-SRCREV_au16 = "2cbe4c5a86d7f6a1429d17d7cde498953a153a54"
+SRCREV_au16 = "2f6eaebf073328a26a25df8d4f900def0b796734"
 
 LINUX_VERSION = "3.12"
 
@@ -30,7 +30,10 @@ KERNEL_DEVICETREE = "\
         usom_etop705.dtb \
 "
 
-KERNEL_DEVICETREE_ca16 = "usom_pgd_ca.dtb"
+KERNEL_DEVICETREE_ca16 = "\
+		usom_pgd_ca.dtb \
+		usom_pgdx7_ca.dtb \
+"
 
 KERNEL_DEVICETREE_wu16 = "usom_wu16.dtb"
 
@@ -38,10 +41,10 @@ KERNEL_DEVICETREE_au16 = "usom_au.dtb"
 
 KERNEL_DEVICETREE_na16 = "usom_na16.dtb"
 
-KERNEL_DEVICETREE_beaglebone = "\
-        am335x-bone.dtb \
-        am335x-boneblack.dtb \
-"
+#KERNEL_DEVICETREE_beaglebone = "\
+#        am335x-bone.dtb \
+#        am335x-boneblack.dtb \
+#"
 
 require linux.inc
 

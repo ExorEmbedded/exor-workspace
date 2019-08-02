@@ -1,6 +1,6 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
-PR := "${PR}.x14"
+PR := "${PR}.x22"
 
 RDEPENDS_${PN} += "bash"
 

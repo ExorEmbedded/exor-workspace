@@ -6,14 +6,11 @@ HOMEPAGE = "http://qt-project.org"
 LICENSE = "GFDL-1.3 & BSD & ( GPL-3.0 & The-Qt-Company-GPL-Exception-1.0 | The-Qt-Company-Commercial ) & ( GPL-2.0+ | LGPL-3.0 | The-Qt-Company-Commercial )"
 LIC_FILES_CHKSUM = " \
     file://LICENSE.LGPL3;md5=e6a600fd5e1d9cbde2d983680233ad02 \
-    file://LICENSE.LGPLv21;md5=fb91571854638f10b2e5f36562661a5a \
-    file://LICENSE.LGPLv3;md5=a909b94c1c9674b2aa15ff03a86f518a \
     file://LICENSE.GPL2;md5=b234ee4d69f5fce4486a80fdaf4a4263 \
     file://LICENSE.GPL3;md5=d32239bcb673463ab874e80d47fae504 \
     file://LICENSE.GPL3-EXCEPT;md5=763d8c535a234d9a3fb682c7ecb6c073 \
-    file://LICENSE.GPLv3;md5=88e2b9117e6be406b5ed6ee4ca99a705 \
-    file://LGPL_EXCEPTION.txt;md5=9625233da42f9e0ce9d63651a9d97654 \
     file://LICENSE.FDL;md5=6d9f2a9af4c8b8c3c769f6cc1b6aaf7e \
+    file://LICENSE.QT-LICENSE-AGREEMENT-4.0;md5=948f8877345cd66106f11031977a4625 \
 "
 
 QT_MODULE = "qtbase"
@@ -25,8 +22,8 @@ require qt5-git.inc
 FILESEXTRAPATHS =. "${FILE_DIRNAME}/qtbase:"
 
 # common for qtbase-native, qtbase-nativesdk and qtbase
-# Patches from https://github.com/meta-qt5/qtbase/commits/b5.9-shared
-# 5.9.meta-qt5-shared.4
+# Patches from https://github.com/meta-qt5/qtbase/commits/b5.12-shared
+# 5.12.meta-qt5-shared.8
 SRC_URI += "\
     file://0001-Add-linux-oe-g-platform.patch \
     file://0002-cmake-Use-OE_QMAKE_PATH_EXTERNAL_HOST_BINS.patch \
@@ -39,14 +36,20 @@ SRC_URI += "\
     file://0009-Add-OE-specific-specs-for-clang-compiler.patch \
     file://0010-linux-clang-Invert-conditional-for-defining-QT_SOCKL.patch \
     file://0011-tst_qlocale-Enable-QT_USE_FENV-only-on-glibc.patch \
-    file://0013-nativesdk-fix-c++11-math.patch \
+    file://0012-mkspecs-common-gcc-base.conf-Use-I-instead-of-isyste.patch \
+    file://0013-Disable-ltcg-for-host_build.patch \
+    file://0014-Qt5GuiConfigExtras.cmake.in-cope-with-variable-path-.patch \
+    file://0015-corelib-Include-sys-types.h-for-uint32_t.patch \
+    file://0016-Define-QMAKE_CXX.COMPILER_MACROS-for-clang-on-linux.patch \
+    file://0017-Fix-Wdeprecated-copy-warnings.patch \
 "
 
 # common for qtbase-native and nativesdk-qtbase
-# Patches from https://github.com/meta-qt5/qtbase/commits/b5.9-native
-# 5.9.meta-qt5-native.4
+# Patches from https://github.com/meta-qt5/qtbase/commits/b5.12-native
+# 5.12.meta-qt5-native.8
 SRC_URI += " \
-    file://0012-Always-build-uic.patch \
+    file://0018-Always-build-uic-and-qvkgen.patch \
+    file://0019-Avoid-renameeat2-for-native-sdk-builds.patch \
 "
 
 # CMake's toolchain configuration of nativesdk-qtbase
@@ -54,45 +57,27 @@ SRC_URI += " \
     file://OEQt5Toolchain.cmake \
 "
 
-PACKAGES = "${PN}-tools-dbg ${PN}-tools-dev ${PN}-tools-staticdev ${PN}-tools"
-
 PACKAGE_DEBUG_SPLIT_STYLE = "debug-without-src"
 
-FILES_${PN}-tools-dev = " \
-    ${includedir} \
-    ${FILES_SOLIBSDEV} ${libdir}/*.la \
-    ${libdir}/*.prl \
+FILES_${PN}-dev += " \
     ${OE_QMAKE_PATH_ARCHDATA}/mkspecs \
     ${OE_QMAKE_PATH_LIBS}/*.prl \
 "
 
-FILES_${PN}-tools-staticdev = " \
-    ${OE_QMAKE_PATH_LIBS}/*.a \
-"
-
-FILES_${PN}-tools-dbg = " \
-    ${libdir}/.debug \
-    ${OE_QMAKE_PATH_BINS}/.debug \
-"
-
-FILES_${PN}-tools = " \
-    ${libdir}/lib*${SOLIBS} \
-    ${OE_QMAKE_PATH_BINS}/* \
+FILES_${PN} += " \
     ${SDKPATHNATIVE}/environment-setup.d \
-    ${datadir}/cmake \
 "
 
 # qttools binaries are placed in a subdir of bin in order to avoid
 # collisions with qt4. This would trigger debian.bbclass to rename the
 # package, since it doesn't detect binaries in subdirs. Explicitly
 # disable package auto-renaming for the tools-package.
-DEBIAN_NOAUTONAME_${PN}-tools = "1"
+DEBIAN_NOAUTONAME_${PN} = "1"
 
 QT_CONFIG_FLAGS += " \
     -shared \
     -silent \
     -no-pch \
-    -no-rpath \
     -pkg-config \
     ${PACKAGECONFIG_CONFARGS} \
 "
@@ -106,8 +91,13 @@ OE_QMAKE_PATH_HOST_LIBS = "${libdir}"
 deltask generate_qt_config_file
 
 do_configure() {
+    # Regenerate header files when they are included in source tarball
+    # Otherwise cmake files don't set PRIVATE_HEADERS correctly
+    rm -rf ${S}/include
+    mkdir -p ${S}/.git || true
+
     ${S}/configure -v \
-        -opensource -confirm-license \
+        -${QT_EDITION} -confirm-license \
         -sysroot ${STAGING_DIR_TARGET} \
         -no-gcc-sysroot \
         -system-zlib \
@@ -118,7 +108,6 @@ do_configure() {
         -no-accessibility \
         -no-cups \
         -no-gui \
-        -no-qml-debug \
         -no-sql-mysql \
         -no-sql-sqlite \
         -no-opengl \
@@ -138,7 +127,6 @@ do_configure() {
         -archdatadir ${OE_QMAKE_PATH_ARCHDATA} \
         -libexecdir ${OE_QMAKE_PATH_LIBEXECS} \
         -plugindir ${OE_QMAKE_PATH_PLUGINS} \
-        -importdir ${OE_QMAKE_PATH_IMPORTS} \
         -qmldir ${OE_QMAKE_PATH_QML} \
         -translationdir ${OE_QMAKE_PATH_TRANSLATIONS} \
         -testsdir ${OE_QMAKE_PATH_TESTS} \
@@ -151,7 +139,6 @@ do_configure() {
         -nomake examples \
         -nomake tests \
         -no-compile-examples \
-        -no-rpath \
         -platform ${OE_QMAKE_PLATFORM_NATIVE} \
         -xplatform ${OE_QMAKE_PLATFORM} \
         ${QT_CONFIG_FLAGS}
@@ -169,6 +156,10 @@ do_install() {
     # Install CMake's toolchain configuration
     mkdir -p ${D}${datadir}/cmake/OEToolchainConfig.cmake.d/
     install -m 644 ${WORKDIR}/OEQt5Toolchain.cmake ${D}${datadir}/cmake/OEToolchainConfig.cmake.d/
+
+    # Fix up absolute paths in scripts
+    sed -i -e '1s,#!/usr/bin/python,#! ${USRBINPATH}/env python,' \
+        ${D}${OE_QMAKE_PATH_QT_ARCHDATA}/mkspecs/features/uikit/devices.py
 }
 
 fakeroot do_generate_qt_environment_file() {
@@ -179,10 +170,11 @@ fakeroot do_generate_qt_environment_file() {
     echo 'export OE_QMAKE_CFLAGS="$CFLAGS"' >> $script
     echo 'export OE_QMAKE_CXXFLAGS="$CXXFLAGS"' >> $script
     echo 'export OE_QMAKE_LDFLAGS="$LDFLAGS"' >> $script
-    echo 'export OE_QMAKE_CC=$CC' >> $script
-    echo 'export OE_QMAKE_CXX=$CXX' >> $script
-    echo 'export OE_QMAKE_LINK=$CXX' >> $script
+    echo 'export OE_QMAKE_CC="$CC"' >> $script
+    echo 'export OE_QMAKE_CXX="$CXX"' >> $script
+    echo 'export OE_QMAKE_LINK="$CXX"' >> $script
     echo 'export OE_QMAKE_AR=$AR' >> $script
+    echo 'export OE_QMAKE_STRIP=$STRIP' >> $script
     echo 'export QT_CONF_PATH=${OE_QMAKE_PATH_HOST_BINS}/qt.conf' >> $script
     echo 'export OE_QMAKE_LIBDIR_QT=`qmake -query QT_INSTALL_LIBS`' >> $script
     echo 'export OE_QMAKE_INCDIR_QT=`qmake -query QT_INSTALL_HEADERS`' >> $script
@@ -199,6 +191,9 @@ fakeroot do_generate_qt_environment_file() {
     sed -i -e 's:${SDKPATHNATIVE}:$OECORE_NATIVE_SYSROOT:g' $script
 }
 
+FILES_${PN} += "${datadir}/cmake/OEToolchainConfig.cmake.d/*"
+
+do_generate_qt_environment_file[umask] = "022"
 addtask generate_qt_environment_file after do_install before do_package
 
-SRCREV = "0d9208cecbbd9ed08e4ffb6540729668e3bd7754"
+SRCREV = "b527725766df850fcad6b9078fea5e8da8085560"

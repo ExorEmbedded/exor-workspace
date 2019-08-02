@@ -1,0 +1,14 @@
+Index: avahi-0.7/avahi-core/server.c
+===================================================================
+--- avahi-0.7.orig/avahi-core/server.c
++++ avahi-0.7/avahi-core/server.c
+@@ -976,7 +976,9 @@ static void dispatch_packet(AvahiServer
+             avahi_dns_packet_get_field(p, AVAHI_DNS_FIELD_ANCOUNT) == 0 ||
+             avahi_dns_packet_get_field(p, AVAHI_DNS_FIELD_NSCOUNT) != 0) {
+ 
++            /* Avoid flooding
+             avahi_log_debug("Invalid response packet from host %s.", avahi_address_snprint(t, sizeof(t), src_address));
++            */
+             return;
+         }
+ 

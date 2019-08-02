@@ -1,0 +1,25 @@
+From c222dbf8ef7cb541b10467389b463671cf0dbd95 Mon Sep 17 00:00:00 2001
+From: Luigi Scagnet Exor Int <luigi.scagnet@exorint.com>
+Date: Wed, 13 Dec 2017 18:37:41 +0100
+Subject: [PATCH] Reduced misclick threshold.
+
+---
+ scripts/xinput_calibrator_pointercal.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scripts/xinput_calibrator_pointercal.sh b/scripts/xinput_calibrator_pointercal.sh
+index 1a3bfaf..23cb86c 100755
+--- a/scripts/xinput_calibrator_pointercal.sh
++++ b/scripts/xinput_calibrator_pointercal.sh
+@@ -39,7 +39,7 @@ fi
+
+ [ "$1" = "--restore" ] && exit 0
+
+-CALDATA=`$BINARY --output-type xinput -v | tee $LOGFILE | grep '    xinput set' | sed 's/^    //g; s/$/;/g'`
++CALDATA=`$BINARY --misclick 10 --output-type xinput -v | tee $LOGFILE | grep '    xinput set' | sed 's/^    //g; s/$/;/g'`
+ if [ ! -z "$CALDATA" ] ; then
+   mount -o remount,rw $FACTORYMNT
+   mkdir -p $CALDIR
+--
+2.1.4
+

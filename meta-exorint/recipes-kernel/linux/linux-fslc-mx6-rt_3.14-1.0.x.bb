@@ -11,10 +11,8 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/linux-${LINUX_VERSION}:"
 
 SRCNAME = "imx6linux"
 SRCBRANCH = "master"
-SRCREV = "9158d1018df366a74c904c0ab028968fd1026782"
+SRCREV = "c58d537f01ccbcbb8f3a6dbf9b339aee5b693d8f"
 SRC_URI = "git://github.com/ExorEmbedded/linux-us03.git;branch=${SRCBRANCH}"
-
-SRC_URI_append_jsxx-1ghz = " file://us03dl-enable-1ghz-mode.patch"
 
 LINUX_VERSION = "3.14"
 
@@ -30,4 +28,7 @@ SRC_URI += " \
     file://0003-genksyms-fix-typeof-handling.patch \
     file://0004-Add-compiler-gcc6.h.patch \
     file://0005-Add-compiler-gcc7.h.patch \
+    file://fix-video-playback-blackscreen-issues.patch \ 
 "
+
+SRC_URI_append_jsxx-1ghz = " file://us03dl-enable-1ghz-mode.patch"

@@ -32,11 +32,6 @@ ntpsync(){
 }
 startdaemon(){
 	genconf
-	## The -g option allows ntpd to step the time to correct it just
-	## once.  The daemon will exit if the clock drifts too much after
-	## this.  If ntpd seems to disappear after a while assume TICKADJ
-	## above is set to a totally incorrect value.
-    # => we now use ntpdate instead of -g
 	echo -n "Starting ntpd: "
 	start-stop-daemon --start -x $EXEC -- -p $PIDFILE "$@"
 	echo "done"

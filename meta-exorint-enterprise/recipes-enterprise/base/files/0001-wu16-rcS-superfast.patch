@@ -1,0 +1,465 @@
+diff --git a/files/mainos/etc/init.d/rcS b/files/mainos/etc/init.d/rcS
+index b7c8ff6..937dfdb 100755
+--- a/files/mainos/etc/init.d/rcS
++++ b/files/mainos/etc/init.d/rcS
+@@ -6,119 +6,202 @@
+ # Version:	@(#)/etc/init.d/rcS  2.76  19-Apr-1999  miquels@cistron.nl
+ #
+ 
+-PATH=/sbin:/bin:/usr/sbin:/usr/bin
++export PATH=/sbin:/bin:/usr/sbin:/usr/bin
+ runlevel=S
+ prevlevel=N
+ umask 022
+ export PATH runlevel prevlevel
+ 
+ ROOTTMPMNT=/mnt/tmpRoot
+-
+ DATAPARTITION=/dev/mmcblk1p6
+ DATATMPMNT=/mnt/data/
+-
+-CONFIGOSPARTITION=/dev/mmcblk1p2
+-CONFIGOSTMPMNT=/mnt/configos/
+-
+ ETCTMPMNT=/mnt/etcfs/
+ ETCPARTITION=/dev/mmcblk1p5
+-
+ FACTORYPARTITION=/dev/mmcblk1p1
+ FACTORYTMPMNT=/mnt/factory/
+-
+ CMDFILE=$DATATMPMNT/updateCmd
+ 
++exorint_extfsck() {
++   e2fsck -p $1
++   # If we still have unresolved errors run "fsck -y" and
++   # if needed recreate the journal
++   if [ $? -gt 3 ]; then
++      e2fsck -y $1
++      tune2fs -O has_journal $1
++   fi
++}
++####################################
++# Trap CTRL-C &c only in this shell so we can interrupt subprocesses.
++trap ":" INT QUIT TSTP
++####################################
+ # Mount system fs
+ mount -t proc proc /proc
+ mount -t sysfs sysfs /sys
+-
+-#1024 Reboot system if ipu problem
+-/bin/dmesg | /bin/grep "timeout when waiting for flip irq" -q
+-if [ $? = 0 ]
+-then
+-    if [ -e /sys/bus/i2c/devices/0-0068/nvram ]
+-    then
+-        hex_val=$(/usr/bin/hexdump -C /sys/bus/i2c/devices/0-0068/nvram | /bin/sed -n 1p | /usr/bin/awk '{print $3}')
+-        hex_val=$(( hex_val-1))
+-        /bin/echo -ne "\x$hex_val" | /bin/dd of=/sys/bus/i2c/devices/0-0068/nvram bs=1 count=1 seek=1
+-        reboot -f
+-    fi
+-fi
+-
+-# Source defaults.
++mount -t tmpfs -o defaults,size=16M /var/volatile
++exorint_extfsck $ETCPARTITION
+ . /etc/default/rcS
+-. /etc/exorint.funcs
+-
+-if [ $ENABLE_FASTBOOT == "yes" ]
+-then
+-    echo "FastBoot enable";
+-    if [ -x /etc/init.d/rcS_fastboot ]
+-    then
+-        /etc/init.d/rcS_fastboot
+-        exit 0;
+-    fi;
+-else
+-    echo "FastBoot NOT enable";
+-fi;
+-
+-# Trap CTRL-C &c only in this shell so we can interrupt subprocesses.
+-trap ":" INT QUIT TSTP
+-
++####################################
++# Mount system fs
++mount -t tmpfs -o mode=0755,nodev,nosuid,strictatime,size=1M  tmpfs /run
+ mount -t tmpfs -o rw,size=1M tmpfs /mnt
+-
+-# Mount factory partition to get the splash image (if mount fails, perform format+mount)
+-mkdir $FACTORYTMPMNT
+-mount -t ext4 -o ro $FACTORYPARTITION $FACTORYTMPMNT
+-if [ $? -ne 0 ]; then
+-   mke2fs -T ext4 -L "factory" $FACTORYPARTITION
+-   mount -t ext4 -o ro  $FACTORYPARTITION $FACTORYTMPMNT
+-fi
+-
+-# Copy /etc/shadow from etc to the factory partition if not already there
+-if [ ! -e $FACTORYTMPMNT'shadow' ] ; then
+-  mount -o remount,rw $FACTORYTMPMNT
+-  cp -a /etc/shadow $FACTORYTMPMNT'shadow'
+-  chgrp shadow $FACTORYTMPMNT'shadow'
+-  [ -e $FACTORYTMPMNT'machine.ini' ] && touch $FACTORYTMPMNT'shadow.restore'
+-  mount -o remount,ro $FACTORYTMPMNT
+-fi
+-
+-[ "$ENABLE_ROOTFS_FSCK" = "yes" ] && exorint_extfsck $ETCPARTITION
+-
+ mount -t ext4 $ETCPARTITION /etc
+ 
+-# Verify etc partition is properly populated (if no, copy original /etc to it)
++####################################
++#Clear settings just performed
+ if [ ! -d '/etc/init.d' ]; then
+-   # The partition does not contain a valid etc folder
+-   umount -l /etc
+-   mke2fs -T ext4 -L "etc" $ETCPARTITION
+-   mkdir $ETCTMPMNT
+-   mount -t ext4 $ETCPARTITION $ETCTMPMNT
+-   cp -a /etc/. $ETCTMPMNT
+-   sync
+-   mount --move $ETCTMPMNT /etc
+-   rm -rf $ETCTMPMNT
++    # The partition does not contain a valid etc folder
++    umount -l /etc
++    mke2fs -T ext4 -L "etc" $ETCPARTITION
++    mkdir $ETCTMPMNT
++    mount -t ext4 $ETCPARTITION $ETCTMPMNT
++    cp -a /etc/. $ETCTMPMNT
++    sync
++    mount --move $ETCTMPMNT /etc
++    rm -rf $ETCTMPMNT
+ fi
++####################################
++# Standard Boot
++# Call all parts in order
++if [ "$FASTBOOT" == "" ];
++then
++    export TMPDIR=/mnt/.psplash
++    mkdir $TMPDIR
++    mount -t tmpfs -o rw,size=40k /tmpfs $TMPDIR
++
++    # Mount factory partition to get the splash image (if mount fails, perform format+mount)
++    mkdir $FACTORYTMPMNT
++    mount -t ext4 -o ro $FACTORYPARTITION $FACTORYTMPMNT
++
++    # Post-processing - setup other links to factory (global settings)
++    [ ! -L /etc/pointercal.xinput ] && ln -sf $FACTORYTMPMNT/etc/pointercal.xinput /etc/pointercal.xinput
++    [ ! -L /etc/rotation ] && ln -sf $FACTORYTMPMNT/etc/rotation /etc/rotation
++    [ ! -L /etc/X11/xorg.conf.d/x11-rotate.conf ] && mkdir -p /etc/X11/xorg.conf.d && \
++        ln -sf $FACTORYTMPMNT/etc/X11/xorg.conf.d/x11-rotate.conf /etc/X11/xorg.conf.d/x11-rotate.conf
++
++    # Read screen rotation settings
++    rotation=0
++    [ -f /mnt/factory/etc/rotation ] && read rotation < /mnt/factory/etc/rotation
++
++    # Update splash progress bar
++    PROGRESS_STATE=10
++    echo $PROGRESS_STATE > $TMPDIR/progress_state
++    /usr/bin/psplash --angle $rotation &
++    psplash-write "PROGRESS $PROGRESS_STATE"
++
++    mkdir $DATATMPMNT
++    mount -t ext4 -o usrquota,grpquota,rw $DATAPARTITION $DATATMPMNT
++    if [ $? -ne 0 ]; then
++       exorint_extfsck $DATAPARTITION
++       mount -t ext4 -o usrquota,grpquota $DATAPARTITION $DATATMPMNT
++       if [ $? -ne 0 ]; then
++          mke2fs -T ext4 -L "data" $DATAPARTITION
++          mount -t ext4 -o usrquota,grpquota $DATAPARTITION $DATATMPMNT
++       fi
++    fi
++    ####################################
++    # Move /home to data partition
++    if [ ! -d "$DATATMPMNT/home" ]; then
++	    mount -o remount,rw $DATATMPMNT
++	    cp -rp /home $DATATMPMNT
++    fi
++    mount -o bind $DATATMPMNT/home /home
++
++    ####################################
++    # Get etc and bsp versions
++    etcVers="$( cat /etc/migrations/version )"
++    bspVers="$( cat /boot/version )"
++
++    # If versions do not match do postupdate
++    if [ ! "$etcVers" = "$bspVers" ]; then
++       mkdir -p $ROOTTMPMNT
++       mount -o bind / $ROOTTMPMNT
++       . $ROOTTMPMNT/etc/migrations/postupdate.sh
++       umount -l $ROOTTMPMNT
++       rm -r $ROOTTMPMNT
++    fi
+ 
+-# Read screen rotation settings
+-rotation=0
+-[ -f /mnt/factory/etc/rotation ] && read rotation < /mnt/factory/etc/rotation
++    if [ ! -e /etc/configured -a -e $FACTORYTMPMNT/machine.ini ]; then
++       exorint_apply_default_settings
++       reboot -f
++    fi
+ 
+-# Disable console on framebuffer to avoid showing console output and
+-# blinking when starting X
+-echo 0 > /sys/class/vtconsole/vtcon1/bind
++    sleep 1;
++    exec /etc/init.d/rc S
++    #Not really needed
++    exit 0;
++fi
+ 
+-# Clear console framebuffer
+-echo -ne "\ec"  > /dev/tty1
++####################################
++# /etc/rcS.d/S35mountall.sh
++if test ! -p /dev/initctl
++then
++	rm -f /dev/initctl
++	mknod -m 600 /dev/initctl p
++fi
++kill -USR1 1
++####################################
++# /etc/rcS.d/S37populate-volatile.sh
++mkdir -p /run/lock /var/volatile/log /var/volatile/tmp /var/lock/subsys /var/run/sepermit /var/volatile/lib /var/run/dbus
++touch /var/log/wtmp /var/run/utmp /var/run/resolv.conf
++chown 1777 /run/lock /var/volatile/tmp
++chown 0755 /var/volatile/log /var/lock/subsys /var/run/sepermit /var/run/dbus/
++chown 0664 /var/log/wtmp /var/run/utmp /var/run/resolv.conf
++
++if [ -f /etc/ld.so.cache ] && [ ! -f /var/run/ld.so.cache ]
++then
++	ln -s /etc/ld.so.cache /var/run/ld.so.cache
++fi
+ 
+-# Clear framebuffer
+-[ -e /dev/fb0 ] && cat /dev/zero > /dev/fb0
++logP=$( cat /etc/default/volatiles/pLogFlag 2>/dev/null )
++# At boot time, mount persistent log location if persistence is enabled
++if [ "$logP" = "y" ]; then
++    /etc/init.d/populate-volatile.sh start
++fi
++####################################
++# /etc/rcS.d/S38devpts.sh
++mknod -m 666 /dev/ptmx c 5 2
++mkdir -p /dev/pts
++mount -t devpts devpts /dev/pts -ogid=5,mode=620
++####################################
++# /etc/rcS.d/S39hostname.sh
++[ ! -r /etc/hostname ] && /etc/init.d/hostname.sh
++####################################
++# /etc/rcS.d/S50fastboot-prechecks.sh
++if [ -e /etc/udev.tar ]
++then
++    cd /
++    tar xf /etc/udev.tar
++else
++    # trigger the sorted events
++    echo -e '\000\000\000\000' > /proc/sys/kernel/hotplug
++    /lib/udev/udevd -d
++    udevadm control --env=STARTUP=1
++    udevadm trigger --action=add \
++            --subsystem-match=input \
++            --subsystem-match=spi \
++            --subsystem-match=tty \
++            --subsystem-match=i2c \
++            --subsystem-match=usb
++fi
++Xorg -nolisten tcp -br -pn -nocursor &
++####################################
++# Mount factory partition to get the
++# splash image (if mount fails, perform format+mount)
++mkdir $FACTORYTMPMNT
++mount -t ext4 -o ro $FACTORYPARTITION $FACTORYTMPMNT
+ 
+-# Start splash
+-export TMPDIR=/mnt/.psplash
+-mkdir $TMPDIR
+-mount -t tmpfs -o rw,size=40k /tmpfs $TMPDIR
++# Post-processing - setup other links to factory (global settings)
++[ ! -L /etc/pointercal.xinput ] && ln -sf $FACTORYTMPMNT/etc/pointercal.xinput /etc/pointercal.xinput
++[ ! -L /etc/rotation ] && ln -sf $FACTORYTMPMNT/etc/rotation /etc/rotation
++[ ! -L /etc/X11/xorg.conf.d/x11-rotate.conf ] && mkdir -p /etc/X11/xorg.conf.d && \
++    ln -sf $FACTORYTMPMNT/etc/X11/xorg.conf.d/x11-rotate.conf /etc/X11/xorg.conf.d/x11-rotate.conf
+ 
++# Do not copy rpm and opkg directories
++for f in $( ls /var/lib | sed "/\(rpm\|opkg\)/d" ); do
++    cp -a /var/lib/$f /var/volatile/lib
++done
++mount --bind /var/volatile/lib /var/lib
++####################################
+ # Get etc and bsp versions
+ etcVers="$( cat /etc/migrations/version )"
+ bspVers="$( cat /boot/version )"
+@@ -132,85 +215,108 @@ if [ ! "$etcVers" = "$bspVers" ]; then
+    rm -r $ROOTTMPMNT
+ fi
+ 
+-if [ -x /usr/bin/setoverlay ]; then
+-    #if we can use overlay, FB1 is used for psplash
+-    export FBDEV=/dev/fb1;
+-    #Create overlay!
+-    /usr/bin/setoverlay;
+-fi;
+-
+-if [ -x /usr/bin/xsplash ]; then
+-    #No close psplash when Xorg starts, is closed by xstarts
+-    psplash_opts="--no-console-switch --infinite-progress"
+-
+-    if [ "$(sys_params services/splash_bar/enabled)" = "false" ]; then
+-        psplash_opts="$psplash_opts --no-progress-bar"
+-    fi
+-fi;
+-
+-/usr/bin/psplash --angle $rotation $psplash_opts &
+-
+-# Post-processing - setup other links to factory (global settings)
+-[ ! -L /etc/pointercal.xinput ] && ln -sf $FACTORYTMPMNT/etc/pointercal.xinput /etc/pointercal.xinput
+-[ ! -L /etc/rotation ] && ln -sf $FACTORYTMPMNT/etc/rotation /etc/rotation
+-[ ! -L /etc/X11/xorg.conf.d/x11-rotate.conf ] && mkdir -p /etc/X11/xorg.conf.d && \
+-    ln -sf $FACTORYTMPMNT/etc/X11/xorg.conf.d/x11-rotate.conf /etc/X11/xorg.conf.d/x11-rotate.conf
+-
+-# Check if shadow in final etc partition is a link to a valid file 
+-if [ ! -L /etc/'shadow' ]; then
+-  ln -s -b $FACTORYTMPMNT'shadow' /etc/'shadow'
+-  sync
+-fi
+-
+ if [ ! -e /etc/configured -a -e $FACTORYTMPMNT/machine.ini ]; then
+    exorint_apply_default_settings
+    reboot -f
+-elif [ ! -e /etc/network/interfaces -a -e $FACTORYTMPMNT/machine.ini ]; then
+-   exorint_apply_default_settings network
+-   reboot -f
+-elif [ -e $FACTORYTMPMNT'shadow.restore' ]; then
+-   exorint_apply_default_settings users
+-   reboot -f
+ fi
+ 
+-psplash-write "PROGRESS 0"
+-
+-# NOTE: we need to keep the factory partition mounted, in order not to break the link with the password file
+-# umount /mnt
+-
+-# Mount configos and data filesystems
+-if [ "$ENABLE_ROOTFS_FSCK" = "yes" ]; then
+-   exorint_extfsck $CONFIGOSPARTITION
++mkdir $DATATMPMNT
++mount -t ext4 -o usrquota,grpquota,ro $DATAPARTITION $DATATMPMNT
++if [ $? -ne 0 ]; then
+    exorint_extfsck $DATAPARTITION
++   mount -t ext4 -o usrquota,grpquota $DATAPARTITION $DATATMPMNT
++   if [ $? -ne 0 ]; then
++      mke2fs -T ext4 -L "data" $DATAPARTITION
++      mount -t ext4 -o usrquota,grpquota $DATAPARTITION $DATATMPMNT
++   fi
++fi
++####################################
++# Move /home to data partition
++if [ ! -d "$DATATMPMNT/home" ]; then
++	mount -o remount,rw $DATATMPMNT
++	cp -rp /home $DATATMPMNT
+ fi
++mount -o bind $DATATMPMNT/home /home
+ 
+-if [ $ENABLE_FASTBOOT != "yes" ]; then
+-   mkdir $CONFIGOSTMPMNT
+-   mount -t ext4 -o ro $CONFIGOSPARTITION $CONFIGOSTMPMNT
++if [ ! -r /etc/hostname ]
++then
++    /etc/init.d/hostname.sh
++else
++    hostname -F /etc/hostname
+ fi
+ 
+-mkdir $DATATMPMNT
+-mount -t ext4 -o usrquota,grpquota $DATAPARTITION $DATATMPMNT
++ifconfig lo up
+ 
+-if [ $? -ne 0 ]; then
+-   mke2fs -T ext4 -L "data" $DATAPARTITION
+-   mount -t ext4 -o usrquota,grpquota $DATAPARTITION $DATATMPMNT
+-fi
++SSL_DIR="${FACTORYTMPMNT}/etc/ssl"
++CERT="${SSL_DIR}/certs/ssl-cert-os.pem"
++CSR="${SSL_DIR}/certs/ssl-cert-os.csr"
++KEY="${SSL_DIR}/private/ssl-cert-os.key"
++SSL_DIR_SYM="/etc/ssl"
+ 
+-[ -e $CMDFILE ] && /etc/updateCmd.sh
++if [ ! -f "${CERT}" ] || [ ! -f "${KEY}" ] || [ ! -f "${CSR}" ]; then
++   echo "Generating SSL keypair..."
+ 
++   mount -o remount,rw ${FACTORYTMPMNT}
+ 
+-exorint_fix_settings /mnt
+-exorint_data_quotaon $DATATMPMNT $QUOTA_DATA_RESERVED
++   rm -rf "${SSL_DIR}" "${SSL_DIR_SYM}"
++   mkdir -p "$( dirname $CERT )" "$( dirname $KEY )"
+ 
+-# Move /home to data partition
+-[ ! -d "$DATATMPMNT/home" ] && cp -rp /home $DATATMPMNT
+-mount -o bind $DATATMPMNT/home /home
++   SUBJECT="/CN=$( hostname )"
++
++   openssl req -x509 -nodes -days 36500 -newkey rsa:2048 -sha512 \
++      -subj "${SUBJECT}" \
++      -keyout "${KEY}" -out "${CERT}"
++
++   openssl req -new -key "${KEY}" -sha512 -out "${CSR}" -subj "${SUBJECT}"
++
++   chown -R root:root "${SSL_DIR}"
++   chmod 600 "${KEY}" "${CERT}" "${CSR}"
++
++   mount -o remount,ro ${FACTORYTMPMNT}
++
++fi
++
++if [ ! -L "${SSL_DIR_SYM}" ]; then
++   rm -rf "${SSL_DIR_SYM}"
++   ln -s "${SSL_DIR}" "${SSL_DIR_SYM}"
++fi
++####################################
++# /etc/rcS.d/S51gpio.sh
++(
++. /etc/default/gpio
++mkdir /dev/gpi/
++for index in ${!INPUT_GPIO_ARRAY[*]}
++do
++    echo "${INPUT_GPIO_ARRAY[$index]}" > /sys/class/gpio/export
++    ln -s /sys/class/gpio/gpio"${INPUT_GPIO_ARRAY[$index]}"/ /dev/gpi/"${INPUT_NAME_ARRAY[$index]}"
++done
++
++mkdir /dev/gpo/
++for index in ${!OUTPUT_GPIO_ARRAY[*]}
++do
++    echo "${OUTPUT_GPIO_ARRAY[$index]}" > /sys/class/gpio/export
++    ln -s /sys/class/gpio/gpio"${OUTPUT_GPIO_ARRAY[$index]}"/ /dev/gpo/"${OUTPUT_NAME_ARRAY[$index]}"
++done
++) &
++####################################
++#S55bootmisc.sh -> ../init.d/bootmisc.sh
++#/etc/init.d/bootmisc.sh start
++(if test -c /dev/ttyp0
++then
++	chmod 666 /dev/tty[p-za-e][0-9a-f]
++	chown root:tty /dev/tty[p-za-e][0-9a-f]
++fi
++) &
++
++(
++SYSCTL_CONF="/etc/sysctl.conf"
++if [ -f "${SYSCTL_CONF}" ]
++then
++    /sbin/sysctl -p "${SYSCTL_CONF}"
++fi
++) &
++####################################
++# /etc/init.d/jmobile
++/etc/init.d/jmobile
+ 
+-# Update splash progress bar
+-PROGRESS_STATE=10
+-echo $PROGRESS_STATE > $TMPDIR/progress_state
+-psplash-write "PROGRESS $PROGRESS_STATE"
+ 
+-# Call all parts in order
+-exec /etc/init.d/rc S

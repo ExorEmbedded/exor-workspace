@@ -1,0 +1,20 @@
+diff -uNr ntp-4.2.8p10/ntpd/ntp_proto.c ntp-4.2.8p10-2/ntpd/ntp_proto.c
+--- ntp-4.2.8p10/ntpd/ntp_proto.c	2017-03-21 14:04:20.000000000 +0100
++++ ntp-4.2.8p10-2/ntpd/ntp_proto.c	2018-06-06 10:56:08.058491825 +0200
+@@ -4521,6 +4521,8 @@
+ 		rval |= TEST10;		/* bad synch or stratum */
+ 	}
+ 
++#if 0 // Disable distance check
++
+ 	/*
+ 	 * A distance error for a remote peer occurs if the root
+ 	 * distance is greater than or equal to the distance threshold
+@@ -4531,6 +4533,7 @@
+ 				      + clock_phi * ULOGTOD(peer->hpoll)) {
+ 		rval |= TEST11;		/* distance exceeded */
+ 	}
++#endif
+ 
+ 	/*
+ 	 * A loop error occurs if the remote peer is synchronized to the

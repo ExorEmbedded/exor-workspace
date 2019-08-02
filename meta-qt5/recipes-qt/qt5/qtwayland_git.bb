@@ -32,22 +32,44 @@ PACKAGECONFIG[xcomposite-egl] = "-feature-xcomposite-egl,-no-feature-xcomposite-
 PACKAGECONFIG[xcomposite-glx] = "-feature-xcomposite-glx,-no-feature-xcomposite-glx,virtual/mesa"
 PACKAGECONFIG[wayland-egl] = "-feature-wayland-egl,-no-feature-wayland-egl,virtual/egl"
 PACKAGECONFIG[wayland-brcm] = "-feature-wayland-brcm,-no-feature-wayland-brcm,virtual/egl"
-PACKAGECONFIG[drm-egl-server] = "-feature-drm-egl-server,-no-feature-drm-egl-server,libdrm virtual/egl"
-PACKAGECONFIG[libhybris-egl-server] = "-feature-libhybris-egl-server,-no-feature-libhybris-egl-server,libhybris"
+PACKAGECONFIG[wayland-drm-egl-server-buffer] = "-feature-wayland-drm-egl-server-buffer,-no-feature-wayland-drm-egl-server-buffer,libdrm virtual/egl"
+PACKAGECONFIG[wayland-libhybris-egl-server-buffer] = "-feature-wayland-libhybris-egl-server-buffer,-no-feature-wayland-libhybris-egl-server-buffer,libhybris"
 
 EXTRA_QMAKEVARS_CONFIGURE += "${PACKAGECONFIG_CONFARGS}"
 
-SRCREV = "83db09bd0acaafb256880e3a217ed9df0641a00a"
-
-# Patches from https://github.com/meta-qt5/qtwayland/commits/b5.9
-# 5.9.meta-qt5.4
-# From https://bugreports.qt.io/browse/QTBUG-57767
-SRC_URI += " \
-    file://0001-fix-build-without-xkbcommon-evdev.patch \
-"
+SRCREV = "bcdc00bcdc67ee478369c04c994c1f576e51cfab"
 
 BBCLASSEXTEND =+ "native nativesdk"
 
 # The same issue as in qtbase:
 # http://errors.yoctoproject.org/Errors/Details/152641/
-LDFLAGS_append_x86 = "${@bb.utils.contains('DISTRO_FEATURES', 'ld-is-gold', ' -fuse-ld=bfd ', '', d)}"
+LDFLAGS_append = "${@bb.utils.contains('DISTRO_FEATURES', 'ld-is-gold', ' -fuse-ld=bfd ', '', d)}"
+
+# Since version 5.11.2 some private headers are not installed. Work around
+# until fixed upstream. See https://bugreports.qt.io/browse/QTBUG-71340 for
+# further details
+QTWAYLAND_INSTALL_PRIVATE_HEADERS_MANUALLY ?= "1"
+# First 6 characters before first + (e.g. 5.11.3-+git) or - (e.g. 5.11.3-2)
+SHRT_VER ?= "${@d.getVar('PV').split('+')[0].split('-')[0]}"
+do_install_append() {
+    if [ -d "${B}/src/client" -a "${QTWAYLAND_INSTALL_PRIVATE_HEADERS_MANUALLY}" = "1" -a -d "${D}${includedir}/QtWaylandClient/${SHRT_VER}/QtWaylandClient/private/" ]; then
+        for header in `find ${B}/src/client -name '*wayland-*.h'`; do
+            header_base=`basename $header`
+            dest="${D}${includedir}/QtWaylandClient/${SHRT_VER}/QtWaylandClient/private/$header_base"
+            if [ ! -e "$dest" ]; then
+                echo "Manual install: $header_base to $dest"
+                install -m 644 "$header" "$dest"
+            fi
+        done
+    fi
+    if [ -d "${B}/src/compositor" -a "${QTWAYLAND_INSTALL_PRIVATE_HEADERS_MANUALLY}" = "1" -a -d "${D}${includedir}/QtCompositor/${SHRT_VER}/QtCompositor/private/" ]; then
+        for header in `find ${B}/src/compositor -name '*wayland-*.h'`; do
+            header_base=`basename $header`
+            dest="${D}${includedir}/QtCompositor/${SHRT_VER}/QtCompositor/private/$header_base"
+            if [ ! -e "$dest" ]; then
+                echo "Manual install: $header_base to $dest"
+                install -m 644 "$header" "$dest"
+            fi
+        done
+    fi
+}

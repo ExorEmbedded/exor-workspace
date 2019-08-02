@@ -1,0 +1,22 @@
+diff -uNr imx6linux/drivers/mxc/ipu3/ipu_common.c imx6linux-2/drivers/mxc/ipu3/ipu_common.c
+--- imx6linux/drivers/mxc/ipu3/ipu_common.c	2018-06-07 16:32:14.624665324 +0200
++++ imx6linux-2/drivers/mxc/ipu3/ipu_common.c	2018-06-07 16:31:38.696148689 +0200
+@@ -504,7 +504,8 @@
+ 	if (!pltfm_data->bypass_reset)
+ 		clk_disable(ipu->ipu_clk);
+ 
+-	register_ipu_device(ipu, ipu->pdata->id);
++	if (ipu->pdata->id == 0)
++		register_ipu_device(ipu, ipu->pdata->id);
+ 
+ 	pm_runtime_enable(&pdev->dev);
+ 
+@@ -515,7 +516,8 @@
+ {
+ 	struct ipu_soc *ipu = platform_get_drvdata(pdev);
+ 
+-	unregister_ipu_device(ipu, ipu->pdata->id);
++	if (ipu->pdata->id == 0)
++		unregister_ipu_device(ipu, ipu->pdata->id);
+ 
+ 	clk_put(ipu->ipu_clk);

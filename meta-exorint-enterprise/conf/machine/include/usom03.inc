@@ -28,9 +28,10 @@ PREFERRED_VERSION_linux-imx-rt = "3.14.28"
 #PREFERRED_VERSION_firmware-imx = "3.14.28-1.0.0"
 
 PREFERRED_PROVIDER_virtual/wayland-egl = "imx-gpu-viv"
-PREFERRED_VERSION_imx-gpu-viv = "5.0.11.p4.4-hfp"
-PREFERRED_VERSION_xf86-video-imxfb-vivante = "5.0.11.p4.4"
-PREFERRED_VERSION_xf86-video-imxfb = "11.09.01"
+PREFERRED_PROVIDER_virtual/libgl = "imx-gpu-viv"
+PREFERRED_VERSION_imx-gpu-viv = "5.0.11.p7.4-hfp"
+PREFERRED_VERSION_xf86-video-imxfb-vivante = "5.0.11.p7.4"
+#PREFERRED_VERSION_xf86-video-imxfb = "11.09.01"
 PREFERRED_VERSION_gstreamer1.0-plugins-imx = "0.11.1"
 
 ACCEPT_FSL_EULA = "1"

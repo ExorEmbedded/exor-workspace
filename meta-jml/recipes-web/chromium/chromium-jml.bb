@@ -5,9 +5,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=a26136a158a7bd489efe50329e38188a"
 
 SRCNAME = "chrome-ext"
 SRCBRANCH = "chromium64"
-SRCREV = "596b0ef115c17a11cf519b7c09fba0aeed300639"
+SRCREV = "46f336cfc493222507aa664cfcced829c6eeceac"
 
-PV = "0.11"
+PV = "0.12"
 PKG_NAME = "Chromium"
 PKG_VERSION = "65-${PV}"
 PKG_PLATFORM = "un6x"

@@ -1,9 +1,9 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
-PR := "${PR}.x0"
-
-SRC_URI += "file://e2fsck.conf \
-	file://mke2fs-force-by-default.patch"
+SRC_URI += " \
+	file://e2fsck.conf \
+	file://mke2fs-do-not-ask-on-existing-fs.patch \
+"
 
 do_install () {
 	oe_runmake 'DESTDIR=${D}' install

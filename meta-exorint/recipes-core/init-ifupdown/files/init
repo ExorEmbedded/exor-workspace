@@ -12,6 +12,7 @@
 
 export PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 INTERFACESCONF="/etc/network/interfaces"
+RESOLVCONF="/etc/resolv.conf"
 PPCMD="`cat /proc/$PPID/comm`"
 MODEM_PREV_STATE="0"
 
@@ -93,41 +94,51 @@ start_other() {
 		grep -q "^auto br0" $INTERFACESCONF	&& ifup br0
 	fi
 	# wifi
-	for wiface in `jmuconfig-enabled-wifaces.js`; do
-		grep -q "^auto $wiface" $INTERFACESCONF	&& ifup $wiface
-	done
-	# modem
-	if [ "${PPCMD}" = "rc" ] && \
-		[ "$(/usr/bin/sys_params services/mobile/autostart)" = "true" ]; then
-		if dbus-send --print-reply=literal --system --dest=com.exor.EPAD "/ServiceManager" \
-			com.exor.EPAD.ServiceManager.controlled string:"mobile" | grep -q "boolean true"; then
-			echo "Mobile Service controlled externally - doing nothing"
-		else
-			/usr/bin/modem -x start &  # also reset
+	if [ "${PPCMD}" = "rc" ]; then
+		for wiface in `sys_params network/wifi/autostartInterfaces 2>/dev/null`; do
+			dbus-send --print-reply --system --dest=com.exor.EPAD "/ServiceManager" com.exor.EPAD.ServiceManager.command \
+					string:"wifi" string:"start" string:"{ \"id\" : \"$wiface\" }" > /dev/null
+		done
+	else
+		dbus-send --print-reply --system --dest=com.exor.EPAD "/ServiceManager" com.exor.EPAD.ServiceManager.command \
+				string:"wifi" string:"start" string:"{ \"preserve\" : true }" > /dev/null
+	fi
+	# [modem]
+	if [ "${PPCMD}" = "rc" ]; then
+		# resolv.conf settings are linked to /tmp while running, so restore original 
+		# config in case of reboot
+		if [ -h $RESOLVCONF -a -e $RESOLVCONF.ppporig ]; then
+			mv $RESOLVCONF.ppporig $RESOLVCONF
+		fi 
+		if [ "$(/usr/bin/sys_params services/mobile/autostart 2>/dev/null)" = "true" ]; then
+			if dbus-send --print-reply=literal --system --dest=com.exor.EPAD "/ServiceManager" \
+				com.exor.EPAD.ServiceManager.controlled string:"mobile" | grep -q "boolean true"; then
+				echo "Mobile Service controlled externally - doing nothing"
+			else
+				/usr/bin/modem start &
+			fi
 		fi
 	else
-		if [ "$(/usr/bin/sys_params services/mobile/enabled)" = "true" ]; then
+		if [ "$(/usr/bin/sys_params services/mobile/enabled 2>/dev/null)" = "true" ]; then
 			/usr/bin/modem start
 		fi
 	fi
-	/usr/bin/sys_params -w services/mobile/enabled ""  # delete temporary key
+	/usr/bin/sys_params -w services/mobile/enabled "" 2>/dev/null # delete temporary key
 }
 
 stop_other() {
 	# modem
 	/usr/bin/modem stop
 	# wifi
-	for wiface in `jmuconfig-enabled-wifaces.js`; do
-		grep -q "^auto $wiface" $INTERFACESCONF	&& ifdown -f $wiface
-	done
+	dbus-send --print-reply --system --dest=com.exor.EPAD "/ServiceManager" com.exor.EPAD.ServiceManager.command \
+			string:"wifi" string:"stop" string:"{ \"preserve\" : true }" > /dev/null
 	# bridge
 	grep -q "^auto br0" $INTERFACESCONF	&& ifdown -f br0
 	# loopback
 	ifconfig lo down
 }
 
-case "$1" in
-start)
+do_start() {
 	echo -n "Configuring network interfaces... "
 	sysctl -e -p /etc/sysctl.conf >/dev/null 2>&1
 	gen_network_interfaces
@@ -138,11 +149,9 @@ start)
 		/etc/init.d/ifplugd start
 	fi
 	start_other
+}
 
-	echo "done."
-	;;
-
-stop)
+do_stop() {
 	#check_network_file_systems
 	#check_network_swap
 
@@ -151,16 +160,28 @@ stop)
 	/etc/init.d/ifplugd stop
 	stop_other
 
+	# give some time for interfaces to be pulled down
+	# Note: this could be improved/removed in the future by making EPAD calls
+	# synchronous/multiclient (e.g. startDetached calls in impl/generic/services/wifi.cpp)
+	sleep 3
+}
+
+case "$1" in
+start)
+    do_start
+	echo "done."
+	;;
+
+stop)
+    do_stop
 	echo "done."
 	;;
 
 force-reload|restart)
 	echo "Running $0 $1 is deprecated because it may not enable again some interfaces"
-	echo "Reconfiguring network interfaces... "
 
-	/etc/init.d/ifplugd restart
-	stop_other
-	start_other
+	do_stop
+	do_start
 
 	echo "done."
 	;;

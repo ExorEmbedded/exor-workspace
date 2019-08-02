@@ -7,7 +7,7 @@ COMPATIBLE_MACHINE = "usom03"
 
 SRCNAME = "uboot"
 SRCBRANCH = "uboot2014.04_uS01"
-SRCREV = "a0787838c5a33c130fa6525bb4c0ee3e7f9f27d3"
+SRCREV = "8f9cb5886c3e250c4bae15056de7fccedd2f5be2"
 SRC_URI = "git://github.com/ExorEmbedded/uboot-us01.git;branch=${SRCBRANCH}"
 
 S = "${WORKDIR}/git"

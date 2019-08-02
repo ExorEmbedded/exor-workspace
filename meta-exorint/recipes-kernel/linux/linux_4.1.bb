@@ -5,12 +5,13 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=d7810fab7487fb0aad327b76f1be7cd7"
 
 SRCNAME = "alteralinux"
 SRCBRANCH = "4.1-LTS_us02_etop"
-SRCREV = "22a9b237842221a5f6ac0e507f7cacdbf1eebd18"
+SRCREV = "e5a723c2d2461b27b76d682cae0c5749ef7a8dac"
+
+SRCBRANCH_lj18 = "4.1-LTS_lju"
+SRCREV_lj18 = "92331c70f5544581c2f20784ff8d07559810a2ff"
 
 LINUX_VERSION = "4.1"
 
 COMPATIBLE_MACHINE = "(usom02)"
-
-KERNEL_DEVICETREE = "usom_etop6xx.dtb"
 
 require linux.inc

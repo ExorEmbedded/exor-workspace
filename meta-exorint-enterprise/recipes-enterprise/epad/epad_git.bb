@@ -5,14 +5,14 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=a26136a158a7bd489efe50329e38188a"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-files:"
 
-PR = "r165"
+PR = "r169"
 SRCNAME = "ltools-${BPN}"
 
 SRCBRANCH = "rocko-1.x.x"
-SRCREV = "86f3e3b7b89e5aea924360626bb21e0796a81fb2"
+SRCREV = "7e695dff09d646951230c177a9403e4edeab5cb5"
 
 SRCBRANCH_ca16 = "pgd_ca-1.x.x"
-SRCREV_ca16 = "17c5f7b3a03a9fbb9d8cf543786a37109c721917"
+SRCREV_ca16 = "94bb9994086afd368544c641cdd887fbc7816688"
 
 inherit exorint-src
 
@@ -30,13 +30,13 @@ PROVIDES += "${PN}-im"
 
 DEPENDS += "qt4-x11-free gtk+ libxtst"
 
-RDEPENDS_${PN} += "packagegroup-qt-x11-min ${PN}-im"
+RDEPENDS_${PN} += "bash packagegroup-qt-x11-min ${PN}-im"
 
 # microsom configuration
 EXTRA_QMAKEVARS_PRE += "CONFIG+=usom01"
 
-# avoid automatic source generation
-EXTRA_QMAKEVARS_PRE += "CONFIG+=no_dbusxml2cpp"
+# avoid compiling tests
+EXTRA_QMAKEVARS_PRE += "CONFIG+=no_tests"
 
 # avoid automatic stripping - Yocto will handle it
 EXTRA_QMAKEVARS_PRE += "CONFIG+=debug"

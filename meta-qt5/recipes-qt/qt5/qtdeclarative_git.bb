@@ -14,22 +14,16 @@ LIC_FILES_CHKSUM = " \
 
 DEPENDS += "qtbase"
 
-PACKAGECONFIG ??= "qtxmlpatterns"
-PACKAGECONFIG[qtxmlpatterns] = ",,qtxmlpatterns"
-
-do_configure_prepend() {
-    # disable qtxmlpatterns test if it isn't enabled by PACKAGECONFIG
-    sed -e 's/^\(qtHaveModule(xmlpatterns)\)/OE_QTXMLPATTERNS_ENABLED:\1/' -i ${S}/src/imports/imports.pro
-    sed -e 's/^\(!qtHaveModule(xmlpatterns)\)/!OE_QTXMLPATTERNS_ENABLED|\1/' -i ${S}/tests/auto/quick/quick.pro
-}
+PACKAGECONFIG ??= "qml-debug qml-network ${@bb.utils.contains('DISTRO_FEATURES', 'qt5-static', 'static', '', d)}"
+PACKAGECONFIG[qml-debug] = "-qml-debug,-no-qml-debug"
+PACKAGECONFIG[qml-network] = "-qml-network, -no-qml-network"
+PACKAGECONFIG[static] = ",,qtdeclarative-native"
 
 do_install_append_class-nativesdk() {
     # qml files not needed in nativesdk
     rm -rf ${D}${OE_QMAKE_PATH_QML}
 }
 
-EXTRA_QMAKEVARS_PRE += "${@bb.utils.contains('PACKAGECONFIG', 'qtxmlpatterns', 'CONFIG+=OE_QTXMLPATTERNS_ENABLED', '', d)}"
-
-SRCREV = "317908e72a6ea0b4ca179690539cb352bbf60832"
+SRCREV = "95c938cd67a1f9ccaf5a3a5fd40993f619786ca9"
 
 BBCLASSEXTEND =+ "native nativesdk"

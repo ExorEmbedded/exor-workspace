@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# We don't want this script to block the rest of the boot process
+if [ "$1" != "background" ]; then
+    ( /etc/init.d/dbus-1 start ) &
+    $0 background &
+    if [ -e /mnt/data/hmi/qthmi/deploy/start.sh ];
+    then
+        sleep 25;
+    else
+        sleep 1;
+        # prepare foldef for jmlauncher
+        [ ! -e /mnt/data/hmi ] && mkdir -p /mnt/data/hmi 2> /dev/null
+        [ ! -e /etc/jmlauncher/ ] && mkdir /etc/jmlauncher
+        dbus-send --system --print-reply --dest=com.exor.EPAD '/' com.exor.EPAD.updateCursorVisibility
+        dbus-send --system --print-reply --dest=com.exor.JMLauncher '/' com.exor.JMLauncher.launchHMI | logger
+    fi
+    DISPLAY=:0 /etc/X11/Xsession_post &
+else
+    # work around from /etc/X11/Xinit
+    export USER=root
+    export HOME=/home/root
+    while [ ! -e /tmp/.X11-unix/X0 ]; do
+        usleep 50000
+    done
+    usleep 10000
+    export FASTBOOT=qthmi
+    DISPLAY=:0 /usr/bin/xsplash --no-progress-bar &
+    [ -e /mnt/data/hmi/qthmi/deploy/start.sh ] && /mnt/data/hmi/qthmi/deploy/start.sh -kiosk |& logger
+fi
+exit 0
